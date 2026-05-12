@@ -20,8 +20,8 @@ export function AuthProvider({ children }) {
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30);
   const timeoutRef = useRef(null);
 
-  const login = useCallback(async (email, password, roleType) => {
-    const res = await authService.login(email, password, roleType);
+  const login = useCallback(async (email, password) => {
+    const res = await authService.login(email, password);
     const { user: userData, token } = res.data;
     const roleLower = (userData.role || '').toLowerCase();
     const expiry = new Date(Date.now() + 30 * 60 * 1000);

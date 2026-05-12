@@ -826,6 +826,8 @@ export default function BillingPage() {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Customer</p>
                   <p className="text-sm font-extrabold text-slate-900">{state.selectedBill.customerName || 'Walk-in'}</p>
                   <p className="text-xs text-slate-500 font-medium">{state.selectedBill.customerPhone}</p>
+                  {state.selectedBill.customerAddress && <p className="text-[10px] text-slate-400 leading-tight mt-1">{state.selectedBill.customerAddress}</p>}
+                  {state.selectedBill.customerEmail && <p className="text-[10px] text-emerald-600 font-medium">{state.selectedBill.customerEmail}</p>}
                 </div>
                 <div className="space-y-1 text-right">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Info</p>
@@ -837,27 +839,40 @@ export default function BillingPage() {
               <div className="space-y-4">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Itemized Breakdown</p>
                 <div className="bg-slate-50 rounded-2xl overflow-hidden border border-slate-100">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 bg-white">
-                        <th className="px-6 py-4 text-left">Description</th>
-                        <th className="px-4 py-4 text-center">Qty</th>
-                        <th className="px-6 py-4 text-right">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {state.selectedBill.items.map((item, i) => (
-                        <tr key={i}>
-                          <td className="px-6 py-4">
-                            <p className="font-bold text-slate-800">{item.name}</p>
-                            <p className="text-[10px] text-slate-400">@ ₹{item.price}</p>
-                          </td>
-                          <td className="px-4 py-4 text-center font-black text-slate-600">{item.qty}</td>
-                          <td className="px-6 py-4 text-right font-black text-slate-900">₹{(item.price * item.qty).toFixed(2)}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[10px] border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200 bg-white">
+                          <th className="px-4 py-3 text-left font-black text-slate-400 uppercase">Item</th>
+                          <th className="px-3 py-3 text-center font-black text-slate-400 uppercase">Price</th>
+                          <th className="px-3 py-3 text-center font-black text-slate-400 uppercase">Qty</th>
+                          <th className="px-3 py-3 text-center font-black text-slate-400 uppercase">Free</th>
+                          <th className="px-3 py-3 text-right font-black text-slate-400 uppercase">Tax</th>
+                          <th className="px-4 py-3 text-right font-black text-slate-400 uppercase">Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {state.selectedBill.items.map((item, i) => (
+                          <tr key={i} className="hover:bg-white transition-colors">
+                            <td className="px-4 py-3">
+                              <p className="font-bold text-slate-800">{item.name}</p>
+                              {item.hsn && <p className="text-[9px] text-slate-400 font-mono">HSN: {item.hsn}</p>}
+                            </td>
+                            <td className="px-3 py-3 text-center text-slate-500 font-medium">₹{item.price}</td>
+                            <td className="px-3 py-3 text-center font-black text-slate-700">{item.qty}</td>
+                            <td className="px-3 py-3 text-center">
+                              {item.freeQty > 0 ? <span className="text-emerald-600 font-bold">+{item.freeQty}</span> : <span className="text-slate-300">—</span>}
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <p className="font-bold text-slate-600">{item.gst}%</p>
+                              <p className="text-[8px] text-slate-400 uppercase">₹{((item.cgst || 0) + (item.sgst || 0)).toFixed(2)}</p>
+                            </td>
+                            <td className="px-4 py-3 text-right font-black text-slate-900">₹{(item.total || 0).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
@@ -867,13 +882,23 @@ export default function BillingPage() {
                   <span className="text-slate-800">₹{state.selectedBill.subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs font-bold text-slate-400">
-                  <span>Tax (GST)</span>
+                  <span>Taxable Amount</span>
+                  <span className="text-slate-800">₹{(state.selectedBill.subtotal - (state.selectedBill.subtotal * (state.selectedBill.discount || 0) / 100)).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold text-slate-400">
+                  <span>Total Tax (GST)</span>
                   <span className="text-slate-800">₹{state.selectedBill.gst.toFixed(2)}</span>
                 </div>
                 {state.selectedBill.discount > 0 && (
-                  <div className="flex justify-between text-xs font-bold text-emerald-500">
+                  <div className="flex justify-between text-xs font-bold text-emerald-600">
                     <span>Discount ({state.selectedBill.discount}%)</span>
                     <span>-₹{((state.selectedBill.subtotal * state.selectedBill.discount) / 100).toFixed(2)}</span>
+                  </div>
+                )}
+                {state.selectedBill.balance > 0 && (
+                  <div className="flex justify-between text-xs font-bold text-red-500 pt-2 border-t border-slate-50">
+                    <span>Balance Due</span>
+                    <span>₹{state.selectedBill.balance.toFixed(2)}</span>
                   </div>
                 )}
               </div>

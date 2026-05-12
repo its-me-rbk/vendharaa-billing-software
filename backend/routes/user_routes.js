@@ -76,16 +76,16 @@ router.post("/add", upload.single("logo"), async (req, res) => {
 /* ================= LOGIN ================= */
 router.post("/login", async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
 
-    if (!email || !password || !role) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email, password and role are required",
+        message: "Email and password are required",
       });
     }
 
-    const user = await User.findOne({ email, role });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({
         success: false,
