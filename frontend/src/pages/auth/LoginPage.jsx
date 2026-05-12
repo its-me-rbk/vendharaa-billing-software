@@ -9,7 +9,7 @@ export default function LoginPage() {
   const { login, isAuthenticated, role: authRole } = useAuth();
   const { pharmacyName, logoUrl } = useApp();
 
-  const [role, setRole] = useState('admin');
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,7 +27,7 @@ export default function LoginPage() {
     if (!email || !password) return setError('Please enter email and password');
     setLoading(true);
     try {
-      const assignedRole = await login(email, password, role);
+      const assignedRole = await login(email, password);
       navigate(assignedRole === 'Cashier' ? '/cashier' : '/admin', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
@@ -77,31 +77,7 @@ export default function LoginPage() {
           Enter your credentials to access the portal
         </p>
 
-        {/* Role selector */}
-        <div style={{ marginBottom: 22 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Account Type
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {['admin', 'cashier'].map(r => (
-              <button
-                key={r} type="button" onClick={() => setRole(r)}
-                style={{
-                  flex: 1, padding: '10px 14px', borderRadius: 8,
-                  border: role === r ? '2px solid #2d6a4f' : '2px solid #e2e8f0',
-                  background: role === r ? '#f0fdf4' : '#fff',
-                  color: role === r ? '#2d6a4f' : '#64748b',
-                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  textTransform: 'capitalize', transition: 'all 0.15s',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}
-              >
-                <Shield size={13} />
-                {r.charAt(0).toUpperCase() + r.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
+
 
         {error && (
           <div style={{
