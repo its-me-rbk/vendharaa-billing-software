@@ -1,0 +1,51 @@
+
+
+const mongoose = require("mongoose");
+
+const LoginSessionSchema = new mongoose.Schema(
+  {
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+
+    role: {
+      type: String,
+      enum: ["admin", "cashier"], // ✅ FIXED
+      required: true,
+    },
+
+    loginTime: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+
+    logoutTime: {
+      type: Date,
+      default: null,
+    },
+
+    expiryTime: {
+      type: Date,
+      default: null,
+    },
+
+    logoutReason: {
+      type: String,
+      enum: ['manual','expired','replaced', null],
+      default: null,
+    },
+
+    token: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("LoginSession", LoginSessionSchema);

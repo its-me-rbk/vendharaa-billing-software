@@ -1,0 +1,11 @@
+const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
+const CURRENT_LEVEL = LOG_LEVELS.info;
+
+const logger = {
+  debug: (...args) => { if (CURRENT_LEVEL <= LOG_LEVELS.debug) console.debug('[DEBUG]', ...args); },
+  info: (...args) => { if (CURRENT_LEVEL <= LOG_LEVELS.info) console.info('[INFO]', ...args); },
+  warn: (...args) => { if (CURRENT_LEVEL <= LOG_LEVELS.warn) console.warn('[WARN]', ...args); },
+  error: (...args) => { if (CURRENT_LEVEL <= LOG_LEVELS.error) console.error('[ERROR]', ...args); },
+};
+
+export default logger;

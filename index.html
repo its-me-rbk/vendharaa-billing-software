@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vishnu Medical Bill - Exact</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            padding: 20px; 
+            font-size: 9.5px; 
+            width: 800px; 
+            line-height: 1.1;
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 12px; 
+            letter-spacing: 0.5px;
+        }
+        .header h1 { 
+            margin: 0 0 4px 0; 
+            font-size: 16px; 
+            font-weight: bold;
+        }
+        .header-address { 
+            margin: 0; 
+            font-size: 9.5px; 
+            word-wrap: break-word;
+        }
+        .bill-meta { 
+            display: table; 
+            width: 100%; 
+            margin-bottom: 12px; 
+            font-size: 9px;
+        }
+        .meta-cell { 
+            display: table-cell; 
+            border: 1px solid #000; 
+            padding: 3px 2px; 
+            text-align: center; 
+            width: 33.3%;
+            vertical-align: middle;
+        }
+        .meta-label { 
+            font-weight: bold; 
+            font-size: 8px; 
+            display: block;
+        }
+        .items-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 12px; 
+            font-size: 9px;
+            table-layout: fixed;
+        }
+        .items-table td { 
+            border: 1px solid #000; 
+            padding: 2px 1px; 
+            text-align: center; 
+            height: 16px;
+            vertical-align: middle;
+        }
+        .sno { width: 4%; }
+        .desc { width: 38%; text-align: left; padding-left: 4px; }
+        .qty { width: 6%; }
+        .rate { width: 10%; }
+        .disc { width: 6%; }
+        .taxable { width: 12%; }
+        .gstpct { width: 6%; }
+        .totalcol { width: 12%; }
+        .total-row td { 
+            font-weight: bold; 
+            background: #f5f5f5;
+        }
+        .gst-table { 
+            width: 380px; 
+            margin: 0 auto 15px auto; 
+            border-collapse: collapse; 
+            font-size: 10px;
+        }
+        .gst-table td { 
+            border: 1px solid #000; 
+            padding: 4px 3px; 
+            height: 18px;
+            text-align: center;
+        }
+        .gst-header { font-weight: bold; font-size: 9.5px; }
+        .amount-words { 
+            margin-bottom: 8px; 
+            font-size: 11px; 
+            text-align: right;
+            font-weight: bold;
+        }
+        .signatures { 
+            display: flex; 
+            justify-content: space-between; 
+            gap: 20px;
+            margin-top: 25px;
+        }
+        .signature { 
+            flex: 1; 
+            text-align: center; 
+            font-size: 9px;
+        }
+        .sig-line { 
+            height: 45px; 
+            border-bottom: 1px solid #000; 
+            margin-bottom: 3px;
+        }
+        .qr { 
+            position: absolute; 
+            bottom: 25px; 
+            right: 25px; 
+            width: 85px; 
+            height: 85px; 
+            border: 1px solid #000;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 7px;
+            text-align: center;
+        }
+        @media print { body { padding: 10px; } }
+    </style>
+</head>
+<body>
+    <div style="position: relative;">
+        <div class="header">
+            <h1>VISHNU MEDICAL AGENCY</h1>
+            <p class="header-address">No. XX, VISHNU MEDICAL AGENCY, SIVAGANGAI MAIN ROAD<br>THIRUPARANKUNDRAM, MADURAI-625005. Ph: XXXXXXXX</p>
+        </div>
+        
+        <div class="bill-meta">
+            <div class="meta-cell">
+                <span class="meta-label">Bill No</span>
+                VM/2026/123
+            </div>
+            <div class="meta-cell">
+                <span class="meta-label">Date</span>
+                30/03/2026
+            </div>
+            <div class="meta-cell">
+                <span class="meta-label">E-Bill</span>
+                EB001
+            </div>
+        </div>
+        
+        <table class="items-table">
+            <tbody>
+                <tr>
+                    <td class="sno">1</td>
+                    <td class="desc">Paracetamol Tablet 500mg</td>
+                    <td class="qty">10</td>
+                    <td class="rate">5.00</td>
+                    <td class="disc">-</td>
+                    <td class="taxable">50.00</td>
+                    <td class="gstpct">18</td>
+                    <td class="totalcol">59.00</td>
+                </tr>
+                <tr>
+                    <td class="sno">2</td>
+                    <td class="desc">CBC Complete Blood Count</td>
+                    <td class="qty">1</td>
+                    <td class="rate">300.00</td>
+                    <td class="disc">-</td>
+                    <td class="taxable">300.00</td>
+                    <td class="gstpct">18</td>
+                    <td class="totalcol">354.00</td>
+                </tr>
+                <tr>
+                    <td class="sno">3</td>
+                    <td class="desc">X-Ray Chest PA View</td>
+                    <td class="qty">1</td>
+                    <td class="rate">250.00</td>
+                    <td class="disc">-</td>
+                    <td class="taxable">250.00</td>
+                    <td class="gstpct">18</td>
+                    <td class="totalcol">295.00</td>
+                </tr>
+                <tr>
+                    <td class="sno">4</td>
+                    <td class="desc">ECG 12 Lead</td>
+                    <td class="qty">1</td>
+                    <td class="rate">200.00</td>
+                    <td class="disc">-</td>
+                    <td class="taxable">200.00</td>
+                    <td class="gstpct">18</td>
+                    <td class="totalcol">236.00</td>
+                </tr>
+                <tr>
+                    <td class="sno">5</td>
+                    <td class="desc">Consultation-General Physician</td>
+                    <td class="qty">1</td>
+                    <td class="rate">400.00</td>
+                    <td class="disc">-</td>
+                    <td class="taxable">400.00</td>
+                    <td class="gstpct">18</td>
+                    <td class="totalcol">472.00</td>
+                </tr>
+                <tr>
+                    <td class="sno">6</td>
+                    <td class="desc">Injection Vit-B12</td>
+                    <td class="qty">2</td>
+                    <td class="rate">50.00</td>
+                    <td class="disc">-</td>
+                    <td class="taxable">100.00</td>
+                    <td class="gstpct">18</td>
+                    <td class="totalcol">118.00</td>
+                </tr>
+                <tr>
+                    <td class="sno">7</td>
+                    <td class="desc">Saline 500ml IV</td>
+                    <td class="qty">1</td>
+                    <td class="rate">80.00</td>
+                    <td class="disc">-</td>
+                    <td class="taxable">80.00</td>
+                    <td class="gstpct">18</td>
+                    <td class="totalcol">94.40</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="7">TOTAL</td>
+                    <td>1628.40</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <table class="gst-table">
+            <tr>
+                <td colspan="3" class="gst-header">GST</td>
+                <td class="gst-header">@18%</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="3">Bill Amount</td>
+                <td>1921.52</td>
+            </tr>
+        </table>
+        
+        <div class="amount-words">
+            Amount in Words: One Thousand Nine Hundred Twenty One Rupees and Fifty Two Paise Only
+        </div>
+        
+        <div class="signatures">
+            <div class="signature">
+                <div class="sig-line"></div>
+                RECEIVED BY
+            </div>
+            <div class="signature">
+                <div class="sig-line"></div>
+                CHECKED BY
+            </div>
+            <div class="signature">
+                <div class="sig-line"></div>
+                For VISHNU MEDICAL
+            </div>
+        </div>
+        
+        <div class="qr">QR CODE<br>PLACEHOLDER</div>
+    </div>
+</body>
+</html>
