@@ -31,7 +31,15 @@ const CashierBillingPage = lazy(() => import('./pages/cashier/CashierBillingPage
 const CashierPaymentsDuePage = lazy(() => import('./pages/cashier/CashierPaymentsDuePage'));
 
 function AppRoutes() {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role, businessType } = useAuth();
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      document.title = businessType === 'pharma' ? 'Vendharaa Pharma Care' : 'Vendharaa Agro Store';
+    } else {
+      document.title = 'Vendharaa Billing';
+    }
+  }, [isAuthenticated, businessType]);
 
   return (
     <Suspense fallback={<LoadingScreen />}>

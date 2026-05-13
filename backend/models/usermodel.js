@@ -32,6 +32,13 @@ const UserSchema = new mongoose.Schema(
       required: true,
     },
 
+    businessType: {
+      type: String,
+      enum: ["agro", "pharma"],
+      required: true,
+      default: "agro",
+    },
+
     logo: {
       type: String,
     },

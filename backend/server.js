@@ -1,13 +1,13 @@
 
-
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
-const connectDB = require("./config/db");
 
 dotenv.config();
+const { connectDB } = require("./config/db");
 const app = express();
+const startCronJobs = require("./utils/cronJobs");
 
 /* Middleware */
 app.use(cors());
@@ -16,16 +16,20 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* Database */
-connectDB();
+connectDB().then(() => {
+  startCronJobs();
+  console.log("⏰ Cron Jobs Started");
+});
 
 /* Routes */
+// Use specific routers. Middlewares are applied inside each router for flexibility.
+app.use("/api/users", require("./routes/user_routes"));
 app.use("/api/reports", require("./routes/reportRoutes"));
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/bills", require("./routes/BillRoutes"));
 app.use("/api/customers", require("./routes/Customer"));
 app.use("/api/suppliers", require("./routes/SupplierRoutes"));
 app.use("/api/general-settings", require("./routes/generalSettings_routes"));
-app.use("/api/users", require("./routes/user_routes"));
 app.use("/api/logs", require("./routes/logRoutes"));
 
 /* Global Error Handler (Must be after all routes) */

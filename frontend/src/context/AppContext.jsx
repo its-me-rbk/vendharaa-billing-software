@@ -4,7 +4,7 @@ import settingsService from '../services/settingsService';
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const [pharmacyName, setPharmacyName] = useState('AgroMart');
+  const [pharmacyName, setPharmacyName] = useState('Vendharaa Platform');
   const [logoUrl, setLogoUrl] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [settings, setSettings] = useState(null);

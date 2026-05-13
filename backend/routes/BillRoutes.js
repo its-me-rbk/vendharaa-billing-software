@@ -2,14 +2,15 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
+const dbSelector = require("../middleware/dbSelector");
 
-const Bill = require("../models/Bill");
-const Product = require("../models/Product");
-const Customer = require("../models/customer");
+router.use(auth);
+router.use(dbSelector);
 
 // Helper: recalculate customer's totalPurchase and loyaltyPoints from bills
-async function recalcCustomerTotals(customerId) {
+async function recalcCustomerTotals(customerId, models) {
   if (!customerId) return;
+  const { Bill, Customer } = models;
   try {
     const cust = await Customer.findById(customerId).exec();
     const orConditions = [{ customerId: customerId }];
@@ -26,40 +27,53 @@ async function recalcCustomerTotals(customerId) {
   }
 }
 
-// CREATE BILL + DEDUCT STOCK (wholesale: direct quantity deduction)
-router.post("/", auth, async (req, res, next) => {
+// CREATE BILL + DEDUCT STOCK
+router.post("/", async (req, res, next) => {
+  const { Bill, Product } = req.models;
+  const businessType = req.user.businessType;
+
   try {
     const { items } = req.body;
 
     for (let item of items) {
-      const product = await Product.findOne({ name: item.name });
+      const product = await Product.findById(item._id || item.productId);
       if (!product) continue;
 
-      if (product.quantity < item.qty) {
-        return res.status(400).json({
-          error: `Not enough stock for ${item.name}. Available: ${product.quantity}`,
-        });
-      }
-
       const totalToDeduct = (Number(item.qty) || 0) + (Number(item.freeQty) || 0);
-      product.quantity -= totalToDeduct;
+
+      if (businessType === 'pharma' && item.batchNumber) {
+        // Pharma: Deduct from specific batch
+        const batch = product.batches.find(b => b.batchNumber === item.batchNumber);
+        if (!batch || batch.quantity < totalToDeduct) {
+          return res.status(400).json({
+            error: `Not enough stock in batch ${item.batchNumber} for ${item.name}.`,
+          });
+        }
+        batch.quantity -= totalToDeduct;
+        product.quantity -= totalToDeduct; // Keep total in sync
+      } else {
+        // Agro: direct quantity deduction
+        if (product.quantity < totalToDeduct) {
+          return res.status(400).json({
+            error: `Not enough stock for ${item.name}. Available: ${product.quantity}`,
+          });
+        }
+        product.quantity -= totalToDeduct;
+      }
+      
       await product.save();
     }
 
-    // Attach category to each item
-    const { items: incomingItems } = req.body;
-    const itemsWithCategory = [];
-
-    for (let item of incomingItems) {
-      const p = await Product.findOne({ name: item.name });
-      itemsWithCategory.push({
+    // Attach businessType and metadata
+    const incoming = { 
+      ...req.body, 
+      businessType,
+      items: req.body.items.map(item => ({
         ...item,
-        category: p ? p.category : "General",
-        hsn: item.hsn || (p ? p.hsn : ""),
-      });
-    }
-
-    const incoming = { ...req.body, items: itemsWithCategory };
+        businessType
+      }))
+    };
+    
     const totalAmount = Number(incoming.total) || 0;
 
     let payments = Array.isArray(incoming.payments)
@@ -88,7 +102,7 @@ router.post("/", auth, async (req, res, next) => {
 
     try {
       const customerId = req.body.customerId || req.body.customer_id || null;
-      if (customerId) await recalcCustomerTotals(customerId);
+      if (customerId) await recalcCustomerTotals(customerId, req.models);
     } catch (err) {
       console.error("Failed to recalc customer totalPurchase after bill create:", err);
     }
@@ -100,7 +114,8 @@ router.post("/", auth, async (req, res, next) => {
 });
 
 // GET DUE BILLS (partial or unpaid)
-router.get("/due", auth, async (req, res) => {
+router.get("/due", async (req, res) => {
+  const { Bill } = req.models;
   try {
     const bills = await Bill.find({
       $or: [{ paid: false }, { status: "Partial" }, { balance: { $gt: 0 } }],
@@ -112,7 +127,8 @@ router.get("/due", auth, async (req, res) => {
 });
 
 // ADD PAYMENT TO A BILL
-router.post("/:id/payments", auth, async (req, res, next) => {
+router.post("/:id/payments", async (req, res, next) => {
+  const { Bill } = req.models;
   try {
     const bill = await Bill.findById(req.params.id);
     if (!bill) return res.status(404).json({ error: "Bill not found" });
@@ -132,7 +148,7 @@ router.post("/:id/payments", auth, async (req, res, next) => {
     await bill.save();
 
     try {
-      if (bill.paid && bill.customerId) await recalcCustomerTotals(bill.customerId);
+      if (bill.paid && bill.customerId) await recalcCustomerTotals(bill.customerId, req.models);
     } catch (err) {
       console.error("Failed to recalc customer totals after payment:", err);
     }
@@ -144,7 +160,8 @@ router.post("/:id/payments", auth, async (req, res, next) => {
 });
 
 // GET ALL BILLS
-router.get("/", auth, async (req, res, next) => {
+router.get("/", async (req, res, next) => {
+  const { Bill } = req.models;
   try {
     const bills = await Bill.find().sort({ createdAt: -1 });
     res.json(bills);
@@ -154,7 +171,8 @@ router.get("/", auth, async (req, res, next) => {
 });
 
 // GET SINGLE BILL
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", async (req, res) => {
+  const { Bill } = req.models;
   try {
     const bill = await Bill.findById(req.params.id);
     res.json(bill);
@@ -164,25 +182,29 @@ router.get("/:id", auth, async (req, res) => {
 });
 
 // DELETE BILL + RESTORE STOCK
-router.delete("/:id", auth, async (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
+  const { Bill, Product } = req.models;
+  const businessType = req.user.businessType;
+
   try {
     const bill = await Bill.findById(req.params.id);
     if (!bill) return res.status(404).json({ success: false, message: "Bill not found" });
 
-    // Restore stock directly on product.quantity (wholesale — no batches)
     for (let item of bill.items || []) {
       try {
-        let product = null;
-        if (item._id) product = await Product.findById(item._id).exec();
-        if (!product) product = await Product.findOne({ name: item.name }).exec();
-
-        if (!product) {
-          console.warn(`Product not found for bill item: ${item.name} (${item._id})`);
-          continue;
-        }
+        const product = await Product.findById(item._id).exec();
+        if (!product) continue;
 
         const totalToRestore = (Number(item.qty) || 0) + (Number(item.freeQty) || 0);
-        product.quantity = (Number(product.quantity) || 0) + totalToRestore;
+
+        if (businessType === 'pharma' && item.batchNumber) {
+          const batch = product.batches.find(b => b.batchNumber === item.batchNumber);
+          if (batch) batch.quantity += totalToRestore;
+          product.quantity += totalToRestore;
+        } else {
+          product.quantity = (Number(product.quantity) || 0) + totalToRestore;
+        }
+        
         await product.save();
       } catch (err) {
         console.error("Failed to restore stock for item", item, err);
@@ -193,7 +215,7 @@ router.delete("/:id", auth, async (req, res, next) => {
 
     try {
       const customerId = bill.customerId || null;
-      if (customerId) await recalcCustomerTotals(customerId);
+      if (customerId) await recalcCustomerTotals(customerId, req.models);
     } catch (err) {
       console.error("Failed to recalc customer totals after bill delete:", err);
     }

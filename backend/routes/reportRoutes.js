@@ -1,11 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
-const Bill = require("../models/Bill");
-const Product = require("../models/Product");
+const dbSelector = require("../middleware/dbSelector");
+
+router.use(auth);
+router.use(dbSelector);
 
 /* ---------------- REPORT SUMMARY ---------------- */
-router.get("/summary", auth, async (req, res) => {
+router.get("/summary", async (req, res) => {
+  const { Bill } = req.models;
   try {
     const bills = await Bill.find();
 
@@ -37,7 +40,8 @@ router.get("/summary", auth, async (req, res) => {
 });
 
 /* ---------------- TOP PRODUCTS ---------------- */
-router.get("/top-products", auth, async (req, res) => {
+router.get("/top-products", async (req, res) => {
+  const { Bill } = req.models;
   try {
     const bills = await Bill.find();
 
@@ -69,30 +73,33 @@ router.get("/top-products", auth, async (req, res) => {
 });
 
 /* ---------------- EXPIRING PRODUCTS ---------------- */
-router.get("/expiring-products", auth, async (req, res) => {
+router.get("/expiring-products", async (req, res) => {
+  const { Product } = req.models;
   try {
     const products = await Product.find();
     const today = new Date();
     const expiring = [];
 
     products.forEach((p) => {
-      p.batches.forEach((b) => {
-        if (!b.expiryDate) return;
+      if (p.batches) {
+        p.batches.forEach((b) => {
+          if (!b.expiryDate) return;
 
-        const days =
-          (new Date(b.expiryDate) - today) /
-          (1000 * 60 * 60 * 24);
+          const days =
+            (new Date(b.expiryDate) - today) /
+            (1000 * 60 * 60 * 24);
 
-        if (days > 0 && days <= 30) {
-          expiring.push({
-            product: p.name,
-            batch: b.batchNumber,
-            expiryDate: b.expiryDate,
-            quantity: b.quantity,
-            value: b.quantity * b.price,
-          });
-        }
-      });
+          if (days > 0 && days <= 30) {
+            expiring.push({
+              product: p.name,
+              batch: b.batchNumber,
+              expiryDate: b.expiryDate,
+              quantity: b.quantity,
+              value: b.quantity * p.price,
+            });
+          }
+        });
+      }
     });
 
     res.json(expiring);
@@ -102,7 +109,8 @@ router.get("/expiring-products", auth, async (req, res) => {
 });
 
 /* ---------------- SALES TREND (MONTHLY) ---------------- */
-router.get("/sales-trend", auth, async (req, res) => {
+router.get("/sales-trend", async (req, res) => {
+  const { Bill } = req.models;
   try {
     const salesTrend = await Bill.aggregate([
       {
@@ -133,7 +141,8 @@ router.get("/sales-trend", auth, async (req, res) => {
 });
 
 /* ---------------- CATEGORY DISTRIBUTION ---------------- */
-router.get("/category-distribution", auth, async (req, res) => {
+router.get("/category-distribution", async (req, res) => {
+  const { Bill } = req.models;
   try {
     const distribution = await Bill.aggregate([
       { $unwind: "$items" },

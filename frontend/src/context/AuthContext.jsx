@@ -18,21 +18,28 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!sessionStorage.getItem('token'));
   const [sessionTimeoutEnabled, setSessionTimeoutEnabled] = useState(true);
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30);
+  const [businessType, setBusinessType] = useState(() => sessionStorage.getItem('businessType') || 'agro');
   const timeoutRef = useRef(null);
 
-  const login = useCallback(async (email, password) => {
-    const res = await authService.login(email, password);
-    const { user: userData, token } = res.data;
+  const login = useCallback(async (email, password, force = false) => {
+    const res = await authService.login(email, password, force);
+    const { user: userData, token, timeoutMinutes } = res.data;
     const roleLower = (userData.role || '').toLowerCase();
-    const expiry = new Date(Date.now() + 30 * 60 * 1000);
+    
+    // Use timeoutMinutes from settings (via server response)
+    const minutes = timeoutMinutes || 30;
+    const expiry = new Date(Date.now() + minutes * 60 * 1000);
 
     sessionStorage.setItem('token', token);
-    sessionStorage.setItem('tokenExpiry', expiry);
+    sessionStorage.setItem('tokenExpiry', expiry.toISOString());
     sessionStorage.setItem('user', JSON.stringify(userData));
     sessionStorage.setItem('role', roleLower);
+    sessionStorage.setItem('businessType', userData.businessType || 'agro');
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
     setUser(userData);
+    setBusinessType(userData.businessType || 'agro');
+    setSessionTimeoutMinutes(minutes);
     setIsAuthenticated(true);
     try { clearTransientLocalStorage(); } catch (_) {}
 
@@ -103,9 +110,14 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('storage', handler);
   }, []);
 
+  // Theme application
+  useEffect(() => {
+    document.body.setAttribute('data-theme', businessType);
+  }, [businessType]);
+
   return (
     <AuthContext.Provider value={{
-      user, role, isAuthenticated,
+      user, role, isAuthenticated, businessType,
       login, logout, forceLogout,
       sessionTimeoutEnabled, setSessionTimeoutEnabled,
       sessionTimeoutMinutes, setSessionTimeoutMinutes,

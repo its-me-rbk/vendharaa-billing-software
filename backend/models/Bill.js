@@ -2,7 +2,8 @@
 const mongoose = require("mongoose");
 
 const BillSchema = new mongoose.Schema({
-  invoice: { type: String, required: true, unique: true },
+  invoice: { type: String, required: true },
+  businessType: { type: String, enum: ["agro", "pharma"], required: true, default: "agro" },
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
   customerName: { type: String, default: "No Name" },
   customerAddress: { type: String, default: "" },
@@ -14,6 +15,7 @@ const BillSchema = new mongoose.Schema({
       _id: { type: String, required: true }, // product id
       name: String,
       batchNumber: String,  // REQUIRED for batch deduction
+      expiryDate: Date,
       price: Number,
       qty: Number,
       freeQty: { type: Number, default: 0 },
@@ -47,7 +49,10 @@ const BillSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model("Bill", BillSchema);
+module.exports = {
+  BillSchema,
+  Bill: mongoose.model("Bill", BillSchema)
+};
 
 
 

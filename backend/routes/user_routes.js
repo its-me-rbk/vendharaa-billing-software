@@ -6,7 +6,7 @@ const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/usermodel");
-const LoginSession = require("../models/LoginSession"); // ✅ NEW
+const { getConnection, getModels } = require("../config/db"); // ✅ NEW
 const auth = require("../middleware/auth");
 
 const router = express.Router();
@@ -26,9 +26,9 @@ const upload = multer({ storage });
 /* ================= ADD USER ================= */
 router.post("/add", upload.single("logo"), async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, businessType } = req.body;
 
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password || !role || !businessType) {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
@@ -57,6 +57,7 @@ router.post("/add", upload.single("logo"), async (req, res) => {
       email,
       password: hashedPassword,
       role,
+      businessType,
       logo: req.file
         ? `${req.protocol}://${req.get("host")}/${req.file.path.replace(/\\/g, "/")}`
         : null,
@@ -76,7 +77,7 @@ router.post("/add", upload.single("logo"), async (req, res) => {
 /* ================= LOGIN ================= */
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, force = false } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -101,14 +102,42 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    // Get tenant models for session management
+    const tenantDb = getConnection(user.businessType);
+    const tenantModels = getModels(tenantDb);
+    const LoginSession = tenantModels.LoginSession;
+    const GeneralSettings = tenantModels.GeneralSettings;
+
+    // Fetch settings for session timeout
+    const settings = await GeneralSettings.findOne({ businessType: user.businessType });
+    const timeoutMinutes = settings?.sessionTimeoutMinutes || 30;
+
+    // ✅ CHECK FOR EXISTING ACTIVE SESSION
+    if (user.activeToken && !force) {
+      // Check if the token is actually still active in LoginSession
+      const activeSession = await LoginSession.findOne({ 
+        token: user.activeToken, 
+        logoutTime: null,
+        expiryTime: { $gt: new Date() }
+      });
+
+      if (activeSession) {
+        return res.status(409).json({
+          success: false,
+          code: "ALREADY_LOGGED_IN",
+          message: "Account is already logged in from another device.",
+        });
+      }
+    }
+
     // Generate JWT
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role: user.role, businessType: user.businessType },
       process.env.JWT_SECRET,
-      { expiresIn: "30m" }
+      { expiresIn: "10h" } // Max limit, but app-level expiry is enforced by LoginSession
     );
 
-    // ✅ LOGOUT PREVIOUS SESSION IF EXISTS
+    // ✅ LOGOUT PREVIOUS SESSION IF EXISTS (Force or Auto-Cleanup)
     if (user.activeToken) {
       await LoginSession.findOneAndUpdate(
         { token: user.activeToken, logoutTime: null },
@@ -120,11 +149,12 @@ router.post("/login", async (req, res) => {
     user.activeToken = token;
     await user.save();
 
-    // ✅ CREATE LOGIN SESSION (NO PASSWORD)
-    const expiryDate = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    // ✅ CREATE NEW LOGIN SESSION
+    const expiryDate = new Date(Date.now() + timeoutMinutes * 60 * 1000);
     await LoginSession.create({
       email: user.email,
       role: user.role,
+      businessType: user.businessType,
       loginTime: new Date(),
       token: token,
       expiryTime: expiryDate,
@@ -135,23 +165,29 @@ router.post("/login", async (req, res) => {
       success: true,
       message: "Login successful",
       token,
-      expiresIn: "30 minutes",
+      timeoutMinutes,
+      expiresIn: `${timeoutMinutes} minutes`,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        businessType: user.businessType,
         logo: user.logo,
       },
     });
   } catch (error) {
-    next(error);
+    console.error("Login Error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
 
 /* ================= LOGOUT ================= */
-router.post("/logout", auth, async (req, res) => {
+const dbSelector = require("../middleware/dbSelector");
+
+router.post("/logout", auth, dbSelector, async (req, res) => {
   try {
+    const { LoginSession } = req.models;
     const user = await User.findById(req.user.id);
 
     if (user) {
@@ -280,8 +316,9 @@ router.delete("/:id", auth, async (req, res) => {
 });
 
 /* ================= GET LOGIN SESSIONS (ADMIN) ================= */
-router.get("/sessions", auth, async (req, res) => {
+router.get("/sessions", auth, dbSelector, async (req, res) => {
   try {
+    const { LoginSession } = req.models;
     const { email } = req.query;
 
     const filter = email

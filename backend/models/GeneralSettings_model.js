@@ -2,6 +2,7 @@ const mongoose =require("mongoose");
 
 const GeneralSettingsSchema = new mongoose.Schema(
   {
+    businessType: { type: String, enum: ["agro", "pharma"], required: true, default: "agro" },
     pharmacyName: {
       type: String,
       required: true,
@@ -48,4 +49,7 @@ const GeneralSettingsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("GeneralSettings", GeneralSettingsSchema);
+module.exports = {
+  GeneralSettingsSchema,
+  GeneralSettings: mongoose.model("GeneralSettings", GeneralSettingsSchema)
+};

@@ -24,6 +24,7 @@ export default function useBillingState() {
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [pendingInfo, setPendingInfo] = useState(null);
   const [logoSrc, setLogoSrc] = useState('');
+  const [selectedBatch, setSelectedBatch] = useState(null);
 
   const fetchProducts = useCallback(async () => { try { const r = await api.get('/products'); setProducts(Array.isArray(r.data) ? r.data : []); } catch { setProducts([]); } }, []);
   const fetchCustomers = useCallback(async () => { try { const r = await api.get('/customers'); const d = r.data; setCustomers(Array.isArray(d) ? d : (d?.data || [])); } catch { setCustomers([]); } }, []);
@@ -38,6 +39,14 @@ export default function useBillingState() {
   const selectProduct = useCallback((p) => {
     setSelectedProduct(p);
     setProductSearch('');
+    if (p && p.batches && p.batches.length > 0) {
+      // Auto-select if only one valid batch
+      const validBatches = p.batches.filter(b => b.quantity > 0);
+      if (validBatches.length === 1) setSelectedBatch(validBatches[0]);
+      else setSelectedBatch(null);
+    } else {
+      setSelectedBatch(null);
+    }
   }, []);
   const filteredCustomers = customers.filter(c => { const q = customerSearch.trim().toLowerCase(); return q && ((c.name||'').toLowerCase().includes(q) || String(c.phone||'').includes(q)); });
 
@@ -80,6 +89,7 @@ export default function useBillingState() {
     billSearch, setBillSearch, billStatusFilter, setBillStatusFilter,
     selectedBill, setSelectedBill, savingCustomer, setSavingCustomer,
     pendingInfo, setPendingInfo, logoSrc,
+    selectedBatch, setSelectedBatch,
     filteredProducts, filteredCustomers,
     selectCustomer, clearCustomer, calculateFreeQty,
     subtotal, gst, total,

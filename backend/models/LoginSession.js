@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 
 const LoginSessionSchema = new mongoose.Schema(
   {
+    businessType: { type: String, enum: ["agro", "pharma"], required: true, default: "agro" },
     email: {
       type: String,
       required: true,
@@ -48,4 +49,7 @@ const LoginSessionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("LoginSession", LoginSessionSchema);
+module.exports = {
+  LoginSessionSchema,
+  LoginSession: mongoose.model("LoginSession", LoginSessionSchema)
+};
