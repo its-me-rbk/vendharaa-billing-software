@@ -49,6 +49,12 @@
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.06);
 
   --header-height: 56px;
+
+  /* Theme-specific Sidebar Overrides */
+  --accent-glow: rgba(45, 106, 79, 0.35);
+  --nav-active-text: #6ee7b7;
+  --avatar-gradient-start: #40916c;
+  --avatar-gradient-end: #1b4332;
 }
 
 /* ── Base Reset ──────────────────────────────────────────── */
@@ -101,7 +107,7 @@ body {
   border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(45,106,79,0.35);
+  box-shadow: 0 2px 8px var(--accent-glow);
 }
 .pro-sidebar .brand-name {
   font-size: 14px; font-weight: 700; color: #fff;
@@ -140,7 +146,7 @@ body {
 }
 .pro-nav-link.active {
   background: var(--sidebar-active-bg);
-  color: #6ee7b7;
+  color: var(--nav-active-text);
   font-weight: 600;
 }
 .pro-nav-link.active::before {
@@ -176,7 +182,7 @@ body {
 }
 .sidebar-user .user-avatar {
   width: 32px; height: 32px; border-radius: 50%;
-  background: linear-gradient(135deg, #40916c, #1b4332);
+  background: linear-gradient(135deg, var(--avatar-gradient-start), var(--avatar-gradient-end));
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; color: #fff;
   flex-shrink: 0;
@@ -790,4 +796,33 @@ option {
 }
 .divider {
   height: 1px; background: var(--border); margin: 16px 0;
+}
+
+/* ── Themes ────────────────────────────────────────────── */
+body[data-theme='agro'] {
+  --sidebar-active: #2d6a4f;
+  --sidebar-active-bg: rgba(45,106,79,0.15);
+  --accent: #2d6a4f;
+  --accent-light: #40916c;
+  --accent-dark: #1b4332;
+  --accent-50: #f0fdf4;
+  --accent-100: #dcfce7;
+  --accent-glow: rgba(45, 106, 79, 0.35);
+  --nav-active-text: #6ee7b7;
+  --avatar-gradient-start: #40916c;
+  --avatar-gradient-end: #1b4332;
+}
+
+body[data-theme='pharma'] {
+  --sidebar-active: #1d4ed8;
+  --sidebar-active-bg: rgba(29, 78, 216, 0.15);
+  --accent: #1d4ed8;
+  --accent-light: #3b82f6;
+  --accent-dark: #1e40af;
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-glow: rgba(29, 78, 216, 0.35);
+  --nav-active-text: #93c5fd;
+  --avatar-gradient-start: #3b82f6;
+  --avatar-gradient-end: #1e40af;
 }

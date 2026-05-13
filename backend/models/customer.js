@@ -7,6 +7,7 @@ const CustomerSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    businessType: { type: String, enum: ["agro", "pharma"], required: true, default: "agro" },
 
     phone: {
       type: String,
@@ -49,4 +50,7 @@ const CustomerSchema = new mongoose.Schema(
 );
 
 
-module.exports=mongoose.model("Customer", CustomerSchema);
+module.exports = {
+  CustomerSchema,
+  Customer: mongoose.model("Customer", CustomerSchema)
+};

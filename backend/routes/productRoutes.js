@@ -2,21 +2,25 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
-const Product = require("../models/Product");
-const Bill = require("../models/Bill");
+const dbSelector = require("../middleware/dbSelector");
+
+router.use(auth);
+router.use(dbSelector);
 
 /**
  * CREATE PRODUCT
  */
-router.post("/", auth, async (req, res, next) => {
+router.post("/", async (req, res, next) => {
   try {
-    const { name, category, manufacturer, quantity, price, gst, hsn, barcode } = req.body;
+    const { name, category, manufacturer, quantity, price, gst, hsn, barcode, batches } = req.body;
+    const { Product } = req.models;
+
     if (!name) return res.status(400).json({ success: false, message: "Name required" });
 
     let existing = await Product.findOne({ name });
     if (existing) return res.status(409).json({ success: false, message: "Product already exists" });
 
-    const product = await Product.create({
+    const productData = {
       name,
       category,
       manufacturer,
@@ -25,7 +29,14 @@ router.post("/", auth, async (req, res, next) => {
       gst: Number(gst) || 0,
       hsn: hsn || "",
       barcode: barcode || "",
-    });
+      businessType: req.user.businessType
+    };
+
+    if (req.user.businessType === 'pharma' && batches) {
+      productData.batches = batches;
+    }
+
+    const product = await Product.create(productData);
     res.json({ success: true, data: product });
   } catch (err) {
     next(err);
@@ -35,7 +46,8 @@ router.post("/", auth, async (req, res, next) => {
 /**
  * GET ALL PRODUCTS
  */
-router.get("/", auth, async (req, res) => {
+router.get("/", async (req, res) => {
+  const { Product } = req.models;
   const products = await Product.find();
   res.json(products);
 });
@@ -43,7 +55,8 @@ router.get("/", auth, async (req, res) => {
 /**
  * TOP PERFORMING PRODUCTS
  */
-router.get("/top-performing", auth, async (req, res) => {
+router.get("/top-performing", async (req, res) => {
+  const { Bill } = req.models;
   const data = await Bill.aggregate([
     { $unwind: "$items" },
     {
@@ -65,8 +78,9 @@ router.get("/top-performing", auth, async (req, res) => {
 /**
  * UPDATE PRODUCT
  */
-router.put("/:id", auth, async (req, res, next) => {
+router.put("/:id", async (req, res, next) => {
   try {
+    const { Product } = req.models;
     const updates = req.body;
     const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
@@ -79,8 +93,9 @@ router.put("/:id", auth, async (req, res, next) => {
 /**
  * DELETE PRODUCT
  */
-router.delete("/:id", auth, async (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
   try {
+    const { Product } = req.models;
     const prod = await Product.findByIdAndDelete(req.params.id);
     if (!prod) return res.status(404).json({ success: false, message: "Product not found" });
     res.json({ success: true, message: "Product deleted" });

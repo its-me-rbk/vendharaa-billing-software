@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   DollarSign, ShoppingCart, AlertTriangle, Clock, TrendingUp, Package,
-  ArrowUp, ArrowDown, Plus, FileText,
+  ArrowUp, ArrowDown, Plus, FileText, Users
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -11,8 +11,12 @@ import PageHeader from '../../components/common/PageHeader';
 import StatCard from '../../components/common/StatCard';
 import api from '../../services/api';
 import { formatCurrency, relativeTime } from '../../lib/utils';
+import { useAuth } from '../../context/AuthContext';
 
 export default function DashboardPage() {
+  const { businessType } = useAuth();
+  const isPharma = businessType === 'pharma';
+
   const [totalSales, setTotalSales] = useState(0);
   const [weeklySales, setWeeklySales] = useState([]);
   const [pendingBills, setPendingBills] = useState(0);
@@ -21,6 +25,7 @@ export default function DashboardPage() {
   const [topProducts, setTopProducts] = useState([]);
   const [recentBills, setRecentBills] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
+  const [totalCustomers, setTotalCustomers] = useState(0);
 
   const fetchDashboardData = async () => {
     try {
@@ -36,18 +41,18 @@ export default function DashboardPage() {
       });
 
       const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const weekly = weekDays.map((d) => ({ name: d, sales: salesMap[d] || 0, profit: Math.round((salesMap[d] || 0) * 0.3) }));
+      const weekly = weekDays.map((d) => ({ name: d, sales: salesMap[d] || 0, profit: Math.round((salesMap[d] || 0) * 0.25) }));
 
       setTotalSales(total);
       setWeeklySales(weekly);
       setPendingBills(bills.filter((b) => !b.paid).length || 0);
 
       const recent = (bills.slice().reverse() || []).slice(0, 5).map((b) => ({
-        id: b.invoiceId || b._id || '—',
-        customer: b.customer?.name || b.customerName || 'Unknown',
+        id: b.invoice || b._id || '—',
+        customer: b.customerName || 'Walk-in',
         amount: formatCurrency(b.total || 0),
         time: relativeTime(b.createdAt),
-        status: b.paid ? 'completed' : 'pending',
+        status: b.paid ? 'Paid' : 'Pending',
       }));
       setRecentBills(recent);
 
@@ -60,38 +65,40 @@ export default function DashboardPage() {
 
       products.forEach((p) => {
         if (p.category) categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
-        (p.batches || []).forEach((b) => {
-          if (b.quantity <= 0) return;
-          if (b.quantity < 10) low++;
-          if (b.expiryDate) {
-            const days = (new Date(b.expiryDate) - new Date()) / (1000 * 60 * 60 * 24);
-            if (days > 0 && days <= 30) expiring++;
-          }
-        });
+        if (isPharma) {
+          (p.batches || []).forEach((b) => {
+            if (b.quantity <= 0) return;
+            if (b.quantity < 10) low++;
+            if (b.expiryDate) {
+              const days = (new Date(b.expiryDate) - new Date()) / (1000 * 60 * 60 * 24);
+              if (days > 0 && days <= 30) expiring++;
+            }
+          });
+        } else {
+          if (p.quantity < 10 && p.quantity > 0) low++;
+        }
       });
 
       setLowStock(low);
       setExpiringSoon(expiring);
 
-      const catColors = ['#14b8a6', '#0d9488', '#0f766e', '#115e59', '#0ea5a4', '#0e7490'];
+      const catColors = isPharma ? 
+        ['#3b82f6', '#2563eb', '#1d4ed8', '#1e40af', '#60a5fa'] :
+        ['#10b981', '#059669', '#047857', '#065f46', '#34d399'];
+
       const categoryArray = Object.entries(categoryCounts).map(([name, count], i) => ({
         name, value: count, color: catColors[i % catColors.length],
       }));
-      setCategoryData(categoryArray.length ? categoryArray : [
-        { name: 'Prescription', value: 35, color: '#14b8a6' },
-        { name: 'OTC', value: 25, color: '#0d9488' },
-        { name: 'Supplements', value: 20, color: '#0f766e' },
-      ]);
+      setCategoryData(categoryArray);
 
-      try {
-        const topRes = await api.get('/products/top-performing');
-        setTopProducts(topRes.data || []);
-      } catch {
-        const top = products
-          .map((p) => ({ name: p.name || p._id, sold: p.soldQty || 0, revenue: formatCurrency((p.soldQty || 0) * (p.price || 0)) }))
-          .sort((a, b) => b.sold - a.sold).slice(0, 5);
-        setTopProducts(top);
-      }
+      const custRes = await api.get('/customers');
+      setTotalCustomers(Array.isArray(custRes.data) ? custRes.data.length : (custRes.data?.data?.length || 0));
+
+      const top = products
+        .map((p) => ({ name: p.name || p._id, sold: p.soldQty || 0, revenue: (p.soldQty || 0) * (p.price || 0) }))
+        .sort((a, b) => b.sold - a.sold).slice(0, 5);
+      setTopProducts(top);
+
     } catch (err) {
       console.error(err);
     }
@@ -99,34 +106,29 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 60000);
-    return () => clearInterval(interval);
   }, []);
 
   const stats = [
-    { label: 'Total Sales', value: formatCurrency(totalSales), icon: DollarSign, iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600', extra: <span className="text-emerald-600"><TrendingUp size={10} /> +12.5%</span> },
-    { label: 'Pending Bills', value: pendingBills, icon: ShoppingCart, iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
-    { label: 'Low Stock Items', value: lowStock, icon: AlertTriangle, iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
-    { label: 'Expiring Soon', value: expiringSoon, icon: Clock, iconBg: 'bg-red-100', iconColor: 'text-red-600' },
+    { label: 'Total Revenue', value: formatCurrency(totalSales), icon: DollarSign, iconBg: 'bg-accent-100', iconColor: 'text-accent' },
+    { label: 'Pending Bills', value: pendingBills, icon: ShoppingCart, iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
+    { label: isPharma ? 'Short Expiry' : 'Total Customers', value: isPharma ? expiringSoon : totalCustomers, icon: isPharma ? Clock : Users, iconBg: isPharma ? 'bg-purple-100' : 'bg-blue-100', iconColor: isPharma ? 'text-purple-600' : 'text-blue-600' },
+    { label: 'Low Stock', value: lowStock, icon: AlertTriangle, iconBg: 'bg-red-100', iconColor: 'text-red-600' },
   ];
 
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        subtitle="Welcome back! Here's what's happening today."
+        title={isPharma ? "Pharma Dashboard" : "Agro Dashboard"}
+        subtitle={`Live overview of your ${businessType} business performance`}
         breadcrumbs={[{ label: 'Home', href: '/admin' }, { label: 'Dashboard' }]}
-      >
-        <button className="btn-primary"><Plus className="w-4 h-4" /> Create Bill</button>
-        <button className="btn-secondary"><FileText className="w-4 h-4" /> Export</button>
-      </PageHeader>
+      />
 
       <div className="page-content space-y-8">
         {/* Stat Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((s) => (
             <StatCard key={s.label} icon={s.icon} label={s.label} value={s.value}
-              iconBg={s.iconBg} iconColor={s.iconColor} extra={s.extra}
+              iconBg={s.iconBg} iconColor={s.iconColor}
             />
           ))}
         </div>
@@ -136,20 +138,18 @@ export default function DashboardPage() {
           <div className="card-pro" style={{ padding: 24 }}>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Sales Overview</h3>
-                <p className="text-[11px] text-slate-500">Weekly sales and profit trends</p>
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Sales Trend</h3>
+                <p className="text-[11px] text-slate-500">Weekly revenue overview</p>
               </div>
-              <TrendingUp className="w-5 h-5 text-emerald-500" />
+              <TrendingUp className="w-5 h-5 text-accent" />
             </div>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={weeklySales} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+              <LineChart data={weeklySales}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
                 <Tooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: 12 }} />
-                <Legend />
-                <Line type="monotone" dataKey="sales" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', r: 4 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="profit" stroke="#0d9488" strokeWidth={3} dot={{ fill: '#0d9488', r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="sales" stroke="var(--accent)" strokeWidth={3} dot={{ fill: 'var(--accent)', r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -157,10 +157,10 @@ export default function DashboardPage() {
           <div className="card-pro" style={{ padding: 24 }}>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Sales by Category</h3>
-                <p className="text-[11px] text-slate-500">Product category breakdown</p>
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Inventory Split</h3>
+                <p className="text-[11px] text-slate-500">Categorical distribution</p>
               </div>
-              <Package className="w-5 h-5 text-emerald-500" />
+              <Package className="w-5 h-5 text-accent" />
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -176,41 +176,30 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Top Products + Alerts */}
+        {/* Top Products + Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="card-pro lg:col-span-2 overflow-hidden">
             <div className="border-b border-slate-100 bg-slate-50/50 flex items-center justify-between" style={{ padding: 20 }}>
-              <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Top Selling Products</h3>
-                <p className="text-[11px] text-slate-500">Best performers this week</p>
-              </div>
-              <TrendingUp className="w-5 h-5 text-emerald-500" />
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Top Performing Items</h3>
+              <TrendingUp className="w-5 h-5 text-accent" />
             </div>
             <div className="overflow-x-auto">
               <table className="pro-table">
                 <thead>
                   <tr>
-                    <th style={{ width: 40 }}>#</th>
                     <th>Product</th>
-                    <th className="text-right">Units Sold</th>
+                    <th className="text-right">Sold</th>
                     <th className="text-right">Revenue</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {topProducts.length === 0 ? (
-                    <tr><td colSpan={4} className="text-center py-12 text-slate-400">No data</td></tr>
-                  ) : (
-                    topProducts.map((p, i) => (
-                      <tr key={p.name || i}>
-                        <td>
-                          <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center text-white text-[10px] font-bold">{i + 1}</div>
-                        </td>
-                        <td className="font-bold text-slate-700">{p.name || p._id}</td>
-                        <td className="text-right font-medium text-slate-500">{p.sold || p.soldQty || 0}</td>
-                        <td className="text-right font-black text-slate-900">{p.revenue || formatCurrency((p.sold || p.soldQty || 0) * (p.price || 0))}</td>
-                      </tr>
-                    ))
-                  )}
+                  {topProducts.map((p, i) => (
+                    <tr key={i}>
+                      <td className="font-bold text-slate-700">{p.name}</td>
+                      <td className="text-right font-medium text-slate-500">{p.sold}</td>
+                      <td className="text-right font-black text-slate-900">{formatCurrency(p.revenue)}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -218,67 +207,23 @@ export default function DashboardPage() {
 
           <div className="card-pro overflow-hidden">
             <div className="border-b border-slate-100 bg-slate-50/50 flex items-center justify-between" style={{ padding: 20 }}>
-              <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Alerts</h3>
-                <p className="text-[11px] text-slate-500">Requires attention</p>
-              </div>
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Recent Activity</h3>
+              <Clock className="w-5 h-5 text-accent" />
             </div>
-            <div style={{ padding: 20 }} className="space-y-3">
-              {expiringSoon > 0 && (
-                <div className="p-3 rounded-lg border-l-4 bg-red-50 border-red-500">
-                  <p className="text-xs font-bold text-red-900">{expiringSoon} batches expiring within 30 days</p>
+            <div className="p-4 space-y-4">
+              {recentBills.map((b) => (
+                <div key={b.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 transition-hover hover:border-accent/30">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-slate-800 truncate">{b.customer}</p>
+                    <p className="text-[10px] text-slate-400 font-bold">{b.id} · {b.time}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-black text-slate-900">{b.amount}</p>
+                    <span className={`text-[9px] font-black uppercase ${b.status === 'Paid' ? 'text-emerald-600' : 'text-orange-500'}`}>{b.status}</span>
+                  </div>
                 </div>
-              )}
-              {lowStock > 0 && (
-                <div className="p-3 rounded-lg border-l-4 bg-orange-50 border-orange-500">
-                  <p className="text-xs font-bold text-orange-900">{lowStock} low stock batches</p>
-                </div>
-              )}
-              {lowStock === 0 && expiringSoon === 0 && (
-                <div className="p-8 text-center">
-                  <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No alerts — all clear!</p>
-                </div>
-              )}
+              ))}
             </div>
-          </div>
-        </div>
-
-        {/* Recent Transactions */}
-        <div className="card-pro overflow-hidden">
-          <div className="border-b border-slate-100 bg-slate-50/50 flex items-center justify-between" style={{ padding: 20 }}>
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Recent Transactions</h3>
-              <p className="text-[11px] text-slate-500">Latest billing activity</p>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="pro-table">
-              <thead>
-                <tr>
-                  <th>Invoice ID</th>
-                  <th>Customer</th>
-                  <th>Amount</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentBills.map((bill) => (
-                  <tr key={bill.id}>
-                    <td className="font-bold text-slate-700">{bill.id}</td>
-                    <td>{bill.customer}</td>
-                    <td className="font-bold">{bill.amount}</td>
-                    <td className="text-slate-500 text-xs">{bill.time}</td>
-                    <td>
-                      <span className={`badge ${bill.status === 'completed' ? 'badge-green' : 'badge-orange'}`}>
-                        {bill.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>

@@ -21,6 +21,18 @@ export const FARM_CATEGORIES = [
   'Other',
 ];
 
+export const PHARMA_CATEGORIES = [
+  'Tablets',
+  'Capsules',
+  'Syrups',
+  'Injections',
+  'Creams & Ointments',
+  'Supplements',
+  'Medical Equipment',
+  'Surgicals',
+  'Other',
+];
+
 export const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Cheque'];
 
 export const SESSION_TIMEOUT_DEFAULT = 30; // minutes

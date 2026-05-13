@@ -1,15 +1,19 @@
 const express=require("express");
-const Customer =require("../models/customer")
-const Bill = require("../models/Bill");
-const auth = require("../middleware/auth");
-
 const router = express.Router();
+const auth = require("../middleware/auth");
+const dbSelector = require("../middleware/dbSelector");
+
+router.use(auth);
+router.use(dbSelector);
 
 /**
  * @route   POST /api/customers
  * @desc    Add new customer
  */
-router.post("/", auth, async (req, res) => {
+router.post("/", async (req, res, next) => {
+  const { Customer, Bill } = req.models;
+  const businessType = req.user.businessType;
+
   try {
     const {
       name,
@@ -43,6 +47,7 @@ router.post("/", auth, async (req, res) => {
       loyaltyPoints,
       address,
       notes,
+      businessType
     });
 
     // Backfill historical bills that were created before this customer existed (match by phone only)
@@ -84,7 +89,8 @@ router.post("/", auth, async (req, res) => {
  * @route   GET /api/customers
  * @desc    Get all customers
  */
-router.get("/", auth, async (req, res) => {
+router.get("/", async (req, res, next) => {
+  const { Customer } = req.models;
   try {
     const customers = await Customer.find().sort({ createdAt: -1 });
 
@@ -101,7 +107,8 @@ router.get("/", auth, async (req, res) => {
  * @route   PUT /api/customers/:id
  * @desc    Update customer
  */
-router.put("/:id", auth, async (req, res) => {
+router.put("/:id", async (req, res, next) => {
+  const { Customer } = req.models;
   try {
     const updates = req.body;
     const customer = await Customer.findByIdAndUpdate(req.params.id, updates, { new: true });
@@ -116,7 +123,8 @@ router.put("/:id", auth, async (req, res) => {
  * @route   DELETE /api/customers/:id
  * @desc    Delete customer
  */
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/:id", async (req, res, next) => {
+  const { Customer } = req.models;
   try {
     const customer = await Customer.findByIdAndDelete(req.params.id);
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
@@ -126,4 +134,4 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
-module.exports=router
+module.exports=router;

@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutGrid, Package, ShoppingCart, DollarSign, Users, Truck, BarChart3,
-  Tag, Settings, LogOut, Leaf, Clock, X,
+  Tag, Settings, LogOut, Leaf, Pill, Clock, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -32,7 +32,7 @@ const cashierNavItems = [
 ];
 
 export default function Sidebar({ variant = 'admin', mobileOpen = false, onClose }) {
-  const { user, logout } = useAuth();
+  const { user, logout, businessType } = useAuth();
   const { pharmacyName, logoUrl, licenseNumber } = useApp();
 
   const navItems = variant === 'cashier' ? cashierNavItems : adminNavItems;
@@ -51,11 +51,11 @@ export default function Sidebar({ variant = 'admin', mobileOpen = false, onClose
           {logoUrl ? (
             <img src={logoUrl} alt="logo" style={{ width: 22, height: 22, objectFit: 'contain', borderRadius: 4 }} />
           ) : (
-            <Leaf size={18} color="#fff" />
+            businessType === 'pharma' ? <Pill size={18} color="#fff" /> : <Leaf size={18} color="#fff" />
           )}
         </div>
         <div>
-          <div className="brand-name">{pharmacyName || 'AgroMart'}</div>
+          <div className="brand-name">{pharmacyName || (businessType === 'pharma' ? 'PharmaMart' : 'AgroMart')}</div>
           <div className="brand-tagline">{licenseNumber || (variant === 'cashier' ? 'Cashier Station' : 'Admin Panel')}</div>
         </div>
         <button type="button" className="mobile-sidebar-close" onClick={onClose} aria-label="Close menu">

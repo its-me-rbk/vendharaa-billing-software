@@ -7,6 +7,7 @@ const supplierSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    businessType: { type: String, enum: ["agro", "pharma"], required: true, default: "agro" },
 
     phone: {
       type: String,
@@ -42,4 +43,7 @@ const supplierSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Supplier", supplierSchema);
+module.exports = {
+  supplierSchema,
+  Supplier: mongoose.model("Supplier", supplierSchema)
+};

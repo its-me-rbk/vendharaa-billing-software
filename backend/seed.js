@@ -1,193 +1,226 @@
 /**
- * Seed script for AgroMart Farm Billing Software
+ * Multi-Tenant Seed script for Vendharaa Billing Software
+ * Realtime-style Indian data (Tamil Nadu focus) using @faker-js/faker
  * Run: node seed.js
  */
 
 require("dotenv").config();
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { fakerEN_IN: faker } = require("@faker-js/faker");
 
+const { productSchema } = require("./models/Product");
+const { CustomerSchema } = require("./models/customer");
+const { supplierSchema } = require("./models/Supplier");
+const { BillSchema } = require("./models/Bill");
+const { GeneralSettingsSchema } = require("./models/GeneralSettings_model");
 const User = require("./models/usermodel");
-const Product = require("./models/Product");
-const Customer = require("./models/customer");
-const Supplier = require("./models/Supplier");
-const Bill = require("./models/Bill");
-const GeneralSettings = require("./models/GeneralSettings_model");
+
+const TN_CITIES = ["Dharmapuri", "Salem", "Chennai", "Trichy", "Madurai", "Coimbatore", "Erode", "Hosur", "Vellore", "Namakkal"];
 
 async function seed() {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log("✅ Connected to MongoDB");
+  console.log("🚀 Starting Localized Indian Seed (Tamil Nadu focus)...");
 
-  // ─── CLEAR EXISTING DATA ──────────────────────────────────────────────────
-  await Promise.all([
-    User.deleteMany({}),
-    Product.deleteMany({}),
-    Customer.deleteMany({}),
-    Supplier.deleteMany({}),
-    Bill.deleteMany({}),
-    GeneralSettings.deleteMany({}),
-  ]);
-  console.log("🗑  Cleared existing data");
+  // 1. CONNECT TO DATABASES
+  const masterConn = await mongoose.createConnection(process.env.MONGO_URI).asPromise();
+  const agroConn = await mongoose.createConnection(process.env.MONGO_URI_AGRO).asPromise();
+  const pharmaConn = await mongoose.createConnection(process.env.MONGO_URI_PHARMA).asPromise();
 
-  // ─── GENERAL SETTINGS ─────────────────────────────────────────────────────
-  await GeneralSettings.create({
-    pharmacyName: "Vendharaa Agro Store",
-    licenseNumber: "REG/TN/2024/0042",
-    gstNumber: "33AAACV1234F1ZX",
-    address: "No. 12, Main Bazaar Road, Dharmapuri, Tamil Nadu - 636701",
-    phone: "+91 9876543210",
-    email: "info@vendharaaagro.com",
-    openingTime: "08:00",
-    closingTime: "20:00",
-    sessionTimeoutEnabled: true,
-    sessionTimeoutMinutes: 60,
-  });
-  console.log("⚙️  General settings seeded");
+  console.log("✅ Connected to all Databases");
 
-  // ─── USERS ────────────────────────────────────────────────────────────────
+  // Models
+  const MasterUser = masterConn.model("User", User.schema);
+  const AgroProduct = agroConn.model("Product", productSchema);
+  const AgroCustomer = agroConn.model("Customer", CustomerSchema);
+  const AgroSupplier = agroConn.model("Supplier", supplierSchema);
+  const AgroBill = agroConn.model("Bill", BillSchema);
+  const AgroSettings = agroConn.model("GeneralSettings", GeneralSettingsSchema);
+
+  const PharmaProduct = pharmaConn.model("Product", productSchema);
+  const PharmaCustomer = pharmaConn.model("Customer", CustomerSchema);
+  const PharmaSupplier = pharmaConn.model("Supplier", supplierSchema);
+  const PharmaBill = pharmaConn.model("Bill", BillSchema);
+  const PharmaSettings = pharmaConn.model("GeneralSettings", GeneralSettingsSchema);
+
+  // ─── CLEAR DATA ──────────────────────────────────────────────────────────
+  await MasterUser.deleteMany({});
+  await AgroProduct.deleteMany({}); await AgroCustomer.deleteMany({}); await AgroSupplier.deleteMany({}); await AgroBill.deleteMany({}); await AgroSettings.deleteMany({});
+  await PharmaProduct.deleteMany({}); await PharmaCustomer.deleteMany({}); await PharmaSupplier.deleteMany({}); await PharmaBill.deleteMany({}); await PharmaSettings.deleteMany({});
+  console.log("🗑  Cleared all databases");
+
+  // ─── SEED LOGINS & SETTINGS ───────────────────────────────────────────────
   const adminPass = await bcrypt.hash("Admin@1234", 10);
   const cashierPass = await bcrypt.hash("Cashier@1234", 10);
-
-  await User.insertMany([
-    { name: "Admin User", email: "admin@vendharaa.com", password: adminPass, role: "admin" },
-    { name: "Cashier Ravi", email: "cashier@vendharaa.com", password: cashierPass, role: "cashier" },
-  ]);
-  console.log("👤 Users seeded");
-
-  // ─── PRODUCTS ─────────────────────────────────────────────────────────────
-  const products = await Product.insertMany([
-    { name: "Urea Fertilizer (50kg)", category: "Fertilizers", manufacturer: "IFFCO", quantity: 200, price: 280, gst: 5, hsn: "3102" },
-    { name: "DAP Fertilizer (50kg)", category: "Fertilizers", manufacturer: "IFFCO", quantity: 150, price: 1350, gst: 5, hsn: "3105" },
-    { name: "NPK 19-19-19 (1kg)", category: "Fertilizers", manufacturer: "Coromandel", quantity: 500, price: 85, gst: 5, hsn: "3105" },
-    { name: "Paddy Seeds BR26 (5kg)", category: "Seeds", manufacturer: "Tamil Nadu Seeds", quantity: 300, price: 320, gst: 0, hsn: "1006" },
-    { name: "Sunflower Seeds (1kg)", category: "Seeds", manufacturer: "Rasi Seeds", quantity: 250, price: 180, gst: 0, hsn: "1206" },
-    { name: "Tomato Hybrid Seeds (50g)", category: "Seeds", manufacturer: "Syngenta", quantity: 400, price: 120, gst: 0, hsn: "1209" },
-    { name: "Chlorpyrifos 20% EC (1L)", category: "Pesticides", manufacturer: "Bayer CropScience", quantity: 120, price: 340, gst: 12, hsn: "3808" },
-    { name: "Mancozeb 75% WP (1kg)", category: "Pesticides", manufacturer: "UPL", quantity: 180, price: 220, gst: 12, hsn: "3808" },
-    { name: "2,4-D Herbicide (1L)", category: "Herbicides", manufacturer: "Crystal", quantity: 90, price: 160, gst: 12, hsn: "3808" },
-    { name: "Hand Sprayer 16L", category: "Tools & Equipment", manufacturer: "Aspee", quantity: 40, price: 1250, gst: 18, hsn: "8424" },
-    { name: "Drip Irrigation Kit (1 acre)", category: "Irrigation", manufacturer: "Jain Irrigation", quantity: 25, price: 4800, gst: 18, hsn: "8424" },
-    { name: "Cattle Feed Premium (30kg)", category: "Animal Feed", manufacturer: "Godrej Agrovet", quantity: 80, price: 750, gst: 5, hsn: "2309" },
-    { name: "Micronutrient Mixture (1kg)", category: "Fertilizers", manufacturer: "Sauri Agri", quantity: 350, price: 95, gst: 5, hsn: "3105" },
-    { name: "Weedicide Glyphosate (1L)", category: "Herbicides", manufacturer: "Monsanto", quantity: 110, price: 210, gst: 12, hsn: "3808" },
-    { name: "Garden Hoe (Heavy Duty)", category: "Tools & Equipment", manufacturer: "Falcon", quantity: 60, price: 380, gst: 18, hsn: "8201" },
-    { name: "Potash Fertilizer (50kg)", category: "Fertilizers", manufacturer: "IPL", quantity: 180, price: 850, gst: 5, hsn: "3104" },
-    { name: "Neem Oil Pesticide (500ml)", category: "Pesticides", manufacturer: "T-Stanes", quantity: 150, price: 245, gst: 12, hsn: "3808" },
-    { name: "Hybrid Maize Seeds (10kg)", category: "Seeds", manufacturer: "Pioneer", quantity: 200, price: 1450, gst: 0, hsn: "1005" },
-    { name: "Electric Fencing Wire (500m)", category: "Tools & Equipment", manufacturer: "V-Guard", quantity: 30, price: 3200, gst: 18, hsn: "7313" },
-    { name: "Soil Testing Kit (Digital)", category: "Tools & Equipment", manufacturer: "AgroStar", quantity: 15, price: 2100, gst: 18, hsn: "9027" },
-    { name: "Organic Vermicompost (25kg)", category: "Fertilizers", manufacturer: "Green Agro", quantity: 100, price: 450, gst: 5, hsn: "3101" },
-    { name: "Poultry Feed Starter (25kg)", category: "Animal Feed", manufacturer: "Suguna", quantity: 120, price: 1150, gst: 5, hsn: "2309" },
-    { name: "Rotavator Blades (Set of 6)", category: "Tools & Equipment", manufacturer: "Shaktiman", quantity: 50, price: 1850, gst: 18, hsn: "8432" },
-    { name: "Sprinkler Nozzle (Pro-Series)", category: "Irrigation", manufacturer: "Finolex", quantity: 200, price: 120, gst: 18, hsn: "8424" },
-    { name: "Bio-Fertilizer Azospirillum (1kg)", category: "Fertilizers", manufacturer: "TNAU", quantity: 300, price: 85, gst: 5, hsn: "3101" },
-    { name: "Growth Promoter G-Pro (500ml)", category: "Other", manufacturer: "Rallis India", quantity: 140, price: 420, gst: 12, hsn: "3808" },
-    { name: "Mulching Sheet (400m)", category: "Crop Protection", manufacturer: "Supreme", quantity: 45, price: 2800, gst: 18, hsn: "3920" },
-    { name: "Sticky Traps (Pack of 10)", category: "Crop Protection", manufacturer: "Agri-Care", quantity: 500, price: 150, gst: 12, hsn: "3808" },
-    { name: "Sickle (Forged Steel)", category: "Tools & Equipment", manufacturer: "Tata Agrico", quantity: 100, price: 210, gst: 18, hsn: "8201" },
-    { name: "Goat Feed Pellets (20kg)", category: "Animal Feed", manufacturer: "Kisan", quantity: 90, price: 680, gst: 5, hsn: "2309" },
-  ]);
-  console.log(`🌱 ${products.length} products seeded`);
-
-  // ─── CUSTOMERS ────────────────────────────────────────────────────────────
-  const customers = await Customer.insertMany([
-    { name: "Murugan Farms", phone: "9876501001", email: "murugan@gmail.com", address: "Krishnagiri, TN" },
-    { name: "Rajan Agricultural", phone: "9876501002", email: "rajan@agri.com", address: "Salem, TN" },
-    { name: "Selvam Traders", phone: "9876501003", email: "", address: "Hosur, TN" },
-    { name: "Venkat Agro Co.", phone: "9876501004", email: "venkat@agromarket.in", address: "Namakkal, TN" },
-    { name: "Priya Seeds Shop", phone: "9876501005", email: "", address: "Erode, TN" },
-  ]);
-  console.log(`👨‍🌾 ${customers.length} customers seeded`);
-
-  // ─── SUPPLIERS ────────────────────────────────────────────────────────────
-  await Supplier.insertMany([
-    { name: "IFFCO Distributors", phone: "9111222333", email: "iffco@dist.com", address: "Chennai, TN", productsSupplied: 8 },
-    { name: "Bayer CropScience TN", phone: "9222333444", email: "bayer@tn.com", address: "Coimbatore, TN", productsSupplied: 5 },
-    { name: "Jain Irrigation South", phone: "9333444555", email: "jain@south.com", address: "Madurai, TN", productsSupplied: 3 },
-    { name: "Rasi Seeds Depot", phone: "9444555666", email: "rasi@seeds.com", address: "Dharmapuri, TN", productsSupplied: 6 },
+  await MasterUser.insertMany([
+    { name: "Agro Admin", email: "agro_admin@vendharaa.com", password: adminPass, role: "admin", businessType: "agro" },
+    { name: "Agro Cashier", email: "agro_cashier@vendharaa.com", password: cashierPass, role: "cashier", businessType: "agro" },
+    { name: "Pharma Admin", email: "pharma_admin@vendharaa.com", password: adminPass, role: "admin", businessType: "pharma" },
+    { name: "Pharma Cashier", email: "pharma_cashier@vendharaa.com", password: cashierPass, role: "cashier", businessType: "pharma" },
   ]);
 
-  console.log("🏭 Suppliers seeded");
+  await AgroSettings.create({ 
+    pharmacyName: "Vendharaa Agro Store", 
+    licenseNumber: "AGRO/2024/001", 
+    businessType: "agro", 
+    phone: "+91 9876543210",
+    address: "Gandhi Nagar, Dharmapuri, Tamil Nadu - 636701"
+  });
+  await PharmaSettings.create({ 
+    pharmacyName: "Vendharaa Pharma Care", 
+    licenseNumber: "PHAR/2024/002", 
+    businessType: "pharma", 
+    phone: "+91 8877665544",
+    address: "Medical College Road, Salem, Tamil Nadu - 636030"
+  });
 
-  // ─── SAMPLE BILLS ─────────────────────────────────────────────────────────
-  const now = new Date();
-  const daysAgo = (d) => new Date(now - d * 86400000);
+  // ─── SEED AGRO DATA ──────────────────────────────────────────────────────
+  console.log("🌱 Seeding Localized Agro Data...");
+  
+  const agroSuppliers = await AgroSupplier.insertMany(Array.from({ length: 12 }).map(() => ({
+    name: faker.company.name() + " Agro Industries",
+    phone: faker.helpers.fromRegExp(/[6-9][0-9]{9}/),
+    email: faker.internet.email(),
+    address: faker.helpers.arrayElement(TN_CITIES),
+    businessType: "agro"
+  })));
 
-  const makeBill = (idx, customer, itemsList, discountPct, paymentMethod, paid, daysBack) => {
-    const subtotal = itemsList.reduce((s, i) => s + i.price * i.qty, 0);
-    const discountAmt = (subtotal * discountPct) / 100;
-    const taxable = subtotal - discountAmt;
-    const gstAmt = itemsList.reduce((s, i) => {
-      const base = i.price * i.qty * (1 - discountPct / 100);
-      return s + base * (i.gst / 100);
-    }, 0);
-    const total = taxable + gstAmt;
-    const month = String((daysAgo(daysBack)).getMonth() + 1).padStart(2, "0");
-    const year = String((daysAgo(daysBack)).getFullYear()).slice(-2);
-    const invoice = `#${month}${year}${String(idx).padStart(4, "0")}`;
-    const balance = paid ? 0 : total;
-    return {
-      invoice,
-      customerId: customer._id,
-      customerName: customer.name,
-      customerPhone: customer.phone,
-      customerAddress: customer.address,
-      customerEmail: customer.email || "",
-      items: itemsList.map(i => ({
-        _id: i.productId,
-        name: i.name,
-        price: i.price,
-        qty: i.qty,
-        freeQty: 0,
-        gst: i.gst,
-        taxableAmount: i.price * i.qty,
-        cgst: (i.price * i.qty * i.gst / 100) / 2,
-        sgst: (i.price * i.qty * i.gst / 100) / 2,
-        hsn: i.hsn || "",
-        category: i.category || "General",
-      })),
-      subtotal,
-      discount: discountPct,
-      gst: gstAmt,
-      total,
-      paymentMethod,
-      payments: paid ? [{ amount: total, method: paymentMethod, date: daysAgo(daysBack) }] : [],
-      balance,
-      paid,
-      status: paid ? "Paid" : "Unpaid",
-      createdAt: daysAgo(daysBack),
-    };
-  };
+  const agroCustomers = await AgroCustomer.insertMany(Array.from({ length: 25 }).map(() => ({
+    name: faker.person.fullName(),
+    phone: faker.helpers.fromRegExp(/[6-9][0-9]{9}/),
+    address: faker.helpers.arrayElement(TN_CITIES),
+    businessType: "agro"
+  })));
 
-  const p = (i) => ({ productId: products[i]._id, name: products[i].name, price: products[i].price, qty: 0, gst: products[i].gst, hsn: products[i].hsn, category: products[i].category });
+  const agroProductNames = ["Urea (IFFCO) 50kg", "DAP Fertilizer (SPIC)", "Potash (MOP)", "Zinc Sulphate 21%", "Paddy Seeds - CR100", "Tomato Seeds F1", "Maize Seeds (Pioneer)", "Neem Oil 1L", "NPK 19:19:19", "Cow Dung Manure (Organic)", "Bio Fertilizer Liquid", "Copper Oxychloride (Blue Copper)", "Glyphosate 41%", "Agri Tools Kit", "Backpack Sprayer 16L"];
+  const agroProducts = await AgroProduct.insertMany(agroProductNames.map((name, i) => ({
+    name, 
+    category: i < 4 ? "Fertilizers" : i < 8 ? "Seeds" : "Chemicals",
+    manufacturer: faker.company.name(),
+    quantity: faker.number.int({ min: 50, max: 200 }),
+    price: faker.number.int({ min: 150, max: 3500 }),
+    gst: i % 2 === 0 ? 5 : 0,
+    businessType: "agro",
+    offers: i % 5 === 0 ? [{ buyQty: 10, freeQty: 1 }] : []
+  })));
 
-  const bills = [
-    makeBill(1, customers[0], [{ ...p(0), qty: 10 }, { ...p(2), qty: 20 }, { ...p(6), qty: 3 }], 2, "Cash", true, 25),
-    makeBill(2, customers[1], [{ ...p(1), qty: 5 }, { ...p(3), qty: 15 }], 0, "UPI", true, 20),
-    makeBill(3, customers[2], [{ ...p(7), qty: 8 }, { ...p(8), qty: 4 }, { ...p(9), qty: 1 }], 5, "Cash", true, 18),
-    makeBill(4, customers[3], [{ ...p(10), qty: 2 }, { ...p(11), qty: 6 }], 0, "Bank Transfer", false, 15),
-    makeBill(5, customers[0], [{ ...p(4), qty: 30 }, { ...p(5), qty: 50 }], 3, "Cash", true, 12),
-    makeBill(6, customers[4], [{ ...p(12), qty: 25 }, { ...p(13), qty: 10 }], 0, "UPI", true, 8),
-    makeBill(7, customers[1], [{ ...p(0), qty: 20 }, { ...p(1), qty: 8 }, { ...p(14), qty: 5 }], 2, "Cash", false, 5),
-    makeBill(8, customers[2], [{ ...p(6), qty: 6 }, { ...p(7), qty: 12 }], 0, "Cash", true, 3),
-    makeBill(9, customers[3], [{ ...p(3), qty: 40 }, { ...p(4), qty: 20 }, { ...p(9), qty: 3 }], 0, "UPI", true, 2),
-    makeBill(10, customers[4], [{ ...p(10), qty: 1 }, { ...p(11), qty: 10 }, { ...p(2), qty: 30 }], 5, "Cash", true, 1),
-  ];
+  // Seed 35 Agro Bills
+  for (let i = 0; i < 35; i++) {
+    const cust = faker.helpers.arrayElement(agroCustomers);
+    const prod = faker.helpers.arrayElement(agroProducts);
+    const qty = faker.number.int({ min: 1, max: 10 });
+    const subtotal = prod.price * qty;
+    const gstAmt = (subtotal * prod.gst) / 100;
+    const total = subtotal + gstAmt;
+    const status = faker.helpers.arrayElement(["Paid", "Partial", "Unpaid"]);
 
-  await Bill.insertMany(bills);
-  console.log(`🧾 ${bills.length} sample bills seeded`);
+    await AgroBill.create({
+      invoice: `AG/INV/${1000 + i}`,
+      businessType: "agro",
+      customerName: cust.name,
+      customerPhone: cust.phone,
+      items: [{
+        _id: prod._id.toString(),
+        name: prod.name,
+        price: prod.price,
+        qty,
+        gst: prod.gst,
+        taxableAmount: subtotal,
+        cgst: gstAmt/2,
+        sgst: gstAmt/2
+      }],
+      subtotal, gst: gstAmt, total,
+      paid: status === "Paid",
+      status,
+      payments: status !== "Unpaid" ? [{ amount: status === "Paid" ? total : total/2, method: "Cash", date: faker.date.recent() }] : [],
+      balance: status === "Paid" ? 0 : status === "Partial" ? total/2 : total,
+      createdAt: faker.date.recent({ days: 30 })
+    });
+  }
 
-  console.log("\n═══════════════════════════════════════════════");
-  console.log("  ✅  SEED COMPLETE — LOGIN DETAILS");
-  console.log("═══════════════════════════════════════════════");
-  console.log("  Admin   → admin@vendharaa.com   / Admin@1234");
-  console.log("  Cashier → cashier@vendharaa.com / Cashier@1234");
-  console.log("═══════════════════════════════════════════════\n");
+  // ─── SEED PHARMA DATA ────────────────────────────────────────────────────
+  console.log("💊 Seeding Localized Pharma Data...");
 
-  await mongoose.disconnect();
+  const pharmaSuppliers = await PharmaSupplier.insertMany(Array.from({ length: 12 }).map(() => ({
+    name: faker.company.name() + " Pharmaceuticals",
+    phone: faker.helpers.fromRegExp(/^[6-9][0-9]{9}$/),
+    email: faker.internet.email(),
+    address: faker.helpers.arrayElement(TN_CITIES),
+    businessType: "pharma"
+  })));
+
+  const pharmaCustomers = await PharmaCustomer.insertMany(Array.from({ length: 25 }).map(() => ({
+    name: faker.person.fullName(),
+    phone: faker.helpers.fromRegExp(/^[6-9][0-9]{9}$/),
+    address: faker.helpers.arrayElement(TN_CITIES),
+    businessType: "pharma"
+  })));
+
+  const pharmaProductNames = ["Paracetamol 500mg (Dolo)", "Amoxicillin 250mg", "Cough Syrup (Benadryl)", "Vitamin C Chewable (Limcee)", "Insulin Glargine (Lantus)", "Metformin 500mg", "Atorvastatin 10mg", "Amlodipine 5mg", "Azithromycin 500mg", "Pantoprazole 40mg (Pan-D)", "Cetirizine 10mg", "Ibuprofen 400mg (Combiflam)", "B-Complex Caps (Becosules)", "Zincovit Syrup", "ORS Powder Pkt (Electral)", "Face Mask N95", "Hand Sanitizer (Himalaya)", "Digital Thermometer", "Elastic Bandage", "Disinfectant Spray (Dettol)"];
+  const pharmaProducts = await PharmaProduct.insertMany(pharmaProductNames.map((name, i) => ({
+    name,
+    category: i < 5 ? "Tablets" : i < 10 ? "Syrups" : "General",
+    manufacturer: faker.company.name(),
+    quantity: faker.number.int({ min: 100, max: 1000 }),
+    price: faker.number.int({ min: 20, max: 1500 }),
+    gst: faker.helpers.arrayElement([5, 12, 18]),
+    businessType: "pharma",
+    batches: [
+      { batchNumber: faker.string.alphanumeric(6).toUpperCase(), expiryDate: faker.date.future({ years: 2 }), quantity: 300 },
+      { batchNumber: faker.string.alphanumeric(6).toUpperCase(), expiryDate: faker.date.soon({ days: 60 }), quantity: 200 }
+    ],
+    offers: i % 5 === 0 ? [{ buyQty: 10, freeQty: 2 }] : []
+  })));
+
+  // Seed 35 Pharma Bills
+  for (let i = 0; i < 35; i++) {
+    const cust = faker.helpers.arrayElement(pharmaCustomers);
+    const prod = faker.helpers.arrayElement(pharmaProducts);
+    const qty = faker.number.int({ min: 1, max: 20 });
+    const subtotal = prod.price * qty;
+    const gstAmt = (subtotal * prod.gst) / 100;
+    const total = subtotal + gstAmt;
+    const status = faker.helpers.arrayElement(["Paid", "Partial", "Unpaid"]);
+
+    await PharmaBill.create({
+      invoice: `PH/INV/${2000 + i}`,
+      businessType: "pharma",
+      customerName: cust.name,
+      customerPhone: cust.phone,
+      items: [{
+        _id: prod._id.toString(),
+        name: prod.name,
+        price: prod.price,
+        qty,
+        gst: prod.gst,
+        taxableAmount: subtotal,
+        cgst: gstAmt/2,
+        sgst: gstAmt/2,
+        batchNumber: prod.batches[0].batchNumber,
+        expiryDate: prod.batches[0].expiryDate
+      }],
+      subtotal, gst: gstAmt, total,
+      paid: status === "Paid",
+      status,
+      payments: status !== "Unpaid" ? [{ amount: status === "Paid" ? total : total/2, method: "UPI", date: faker.date.recent() }] : [],
+      balance: status === "Paid" ? 0 : status === "Partial" ? total/2 : total,
+      createdAt: faker.date.recent({ days: 30 })
+    });
+  }
+
+  console.log("\n✅ LOCALIZED INDIAN SEED COMPLETE");
+  console.log("---------------------------------------");
+  console.log("Agro: 15 Products, 25 Customers, 12 Suppliers, 35 Bills");
+  console.log("Pharma: 20 Products, 25 Customers, 12 Suppliers, 35 Bills");
+  console.log("---------------------------------------\n");
+
+  console.log("\n✅ SEEDING COMPLETE");
+  console.log("---------------------------------------\n");
+  console.log("Admin Agro: agro_admin@vendharaa.com / Admin@1234");
+  console.log("Admin Pharma: pharma_admin@vendharaa.com / Admin@1234");
+  console.log("Cashier Agro: agro_cashier@vendharaa.com / Cashier@1234");
+  console.log("Cashier Pharma: pharma_cashier@vendharaa.com / Cashier@1234");
+
+  await masterConn.close(); await agroConn.close(); await pharmaConn.close();
 }
 
-seed().catch((err) => {
-  console.error("❌ Seed failed:", err);
-  process.exit(1);
-});
+seed().catch(err => { console.error("❌ Seed failed:", err); process.exit(1); });

@@ -1,13 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
-const Supplier = require("../models/Supplier");
+const dbSelector = require("../middleware/dbSelector");
+
+router.use(auth);
+router.use(dbSelector);
 
 /**
  * @route   POST /api/suppliers
  * @desc    Add new supplier
  */
-router.post("/", auth, async (req, res) => {
+router.post("/", async (req, res, next) => {
+  const { Supplier } = req.models;
+  const businessType = req.user.businessType;
+
   try {
     const {
       name,
@@ -32,6 +38,7 @@ router.post("/", auth, async (req, res) => {
       address,
       productsSupplied,
       initialDue,
+      businessType
     });
 
     const savedSupplier = await supplier.save();
@@ -49,7 +56,8 @@ router.post("/", auth, async (req, res) => {
  * @route   GET /api/suppliers
  * @desc    Get all suppliers
  */
-router.get("/", auth, async (req, res, next) => {
+router.get("/", async (req, res, next) => {
+  const { Supplier } = req.models;
   try {
     const suppliers = await Supplier.find().sort({ createdAt: -1 });
     res.json(suppliers);
@@ -62,7 +70,8 @@ router.get("/", auth, async (req, res, next) => {
  * @route   DELETE /api/suppliers/:id
  * @desc    Delete supplier
  */
-router.delete("/:id", auth, async (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
+  const { Supplier } = req.models;
   try {
     const supplier = await Supplier.findByIdAndDelete(req.params.id);
     if (!supplier) {
@@ -80,7 +89,8 @@ router.delete("/:id", auth, async (req, res, next) => {
  * @route   PUT /api/suppliers/:id
  * @desc    Update supplier
  */
-router.put("/:id", auth, async (req, res, next) => {
+router.put("/:id", async (req, res, next) => {
+  const { Supplier } = req.models;
   try {
     const updates = req.body;
     const supplier = await Supplier.findByIdAndUpdate(req.params.id, updates, { new: true });
