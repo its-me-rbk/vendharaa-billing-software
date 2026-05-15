@@ -11,6 +11,7 @@ export function AuthProvider({ children }) {
   });
   const [role, setRole] = useState(() => {
     const r = sessionStorage.getItem('role') || '';
+    if (r.toLowerCase() === 'superadmin') return 'SuperAdmin';
     if (r.toLowerCase() === 'admin') return 'Admin';
     if (r.toLowerCase() === 'cashier') return 'Cashier';
     return r;
@@ -43,7 +44,10 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(true);
     try { clearTransientLocalStorage(); } catch (_) {}
 
-    if (roleLower === 'cashier') {
+    if (roleLower === 'superadmin') {
+      setRole('SuperAdmin');
+      return 'SuperAdmin';
+    } else if (roleLower === 'cashier') {
       setRole('Cashier');
       return 'Cashier';
     } else {
@@ -112,8 +116,12 @@ export function AuthProvider({ children }) {
 
   // Theme application
   useEffect(() => {
-    document.body.setAttribute('data-theme', businessType);
-  }, [businessType]);
+    if (role === 'SuperAdmin') {
+      document.body.setAttribute('data-theme', 'superadmin');
+    } else {
+      document.body.setAttribute('data-theme', businessType);
+    }
+  }, [businessType, role]);
 
   return (
     <AuthContext.Provider value={{

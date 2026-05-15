@@ -51,7 +51,9 @@ async function seed() {
   // ─── SEED LOGINS & SETTINGS ───────────────────────────────────────────────
   const adminPass = await bcrypt.hash("Admin@1234", 10);
   const cashierPass = await bcrypt.hash("Cashier@1234", 10);
+  const superPass = await bcrypt.hash("Super@1234", 10);
   await MasterUser.insertMany([
+    { name: "Main Admin", email: "superadmin@vendharaa.com", password: superPass, role: "superadmin", businessType: "master" },
     { name: "Agro Admin", email: "agro_admin@vendharaa.com", password: adminPass, role: "admin", businessType: "agro" },
     { name: "Agro Cashier", email: "agro_cashier@vendharaa.com", password: cashierPass, role: "cashier", businessType: "agro" },
     { name: "Pharma Admin", email: "pharma_admin@vendharaa.com", password: adminPass, role: "admin", businessType: "pharma" },
@@ -142,7 +144,7 @@ async function seed() {
 
   const pharmaSuppliers = await PharmaSupplier.insertMany(Array.from({ length: 12 }).map(() => ({
     name: faker.company.name() + " Pharmaceuticals",
-    phone: faker.helpers.fromRegExp(/^[6-9][0-9]{9}$/),
+    phone: faker.helpers.fromRegExp(/[6-9][0-9]{9}/),
     email: faker.internet.email(),
     address: faker.helpers.arrayElement(TN_CITIES),
     businessType: "pharma"
@@ -150,7 +152,7 @@ async function seed() {
 
   const pharmaCustomers = await PharmaCustomer.insertMany(Array.from({ length: 25 }).map(() => ({
     name: faker.person.fullName(),
-    phone: faker.helpers.fromRegExp(/^[6-9][0-9]{9}$/),
+    phone: faker.helpers.fromRegExp(/[6-9][0-9]{9}/),
     address: faker.helpers.arrayElement(TN_CITIES),
     businessType: "pharma"
   })));
@@ -214,11 +216,13 @@ async function seed() {
   console.log("---------------------------------------\n");
 
   console.log("\n✅ SEEDING COMPLETE");
-  console.log("---------------------------------------\n");
+  console.log("---------------------------------------");
+  console.log("Super Admin: superadmin@vendharaa.com / Super@1234");
   console.log("Admin Agro: agro_admin@vendharaa.com / Admin@1234");
   console.log("Admin Pharma: pharma_admin@vendharaa.com / Admin@1234");
   console.log("Cashier Agro: agro_cashier@vendharaa.com / Cashier@1234");
   console.log("Cashier Pharma: pharma_cashier@vendharaa.com / Cashier@1234");
+  console.log("---------------------------------------\n");
 
   await masterConn.close(); await agroConn.close(); await pharmaConn.close();
 }

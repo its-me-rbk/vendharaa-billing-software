@@ -102,6 +102,13 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    if (user.status === "inactive") {
+      return res.status(403).json({
+        success: false,
+        message: "Account is inactive. Please contact administrator.",
+      });
+    }
+
     // Get tenant models for session management
     const tenantDb = getConnection(user.businessType);
     const tenantModels = getModels(tenantDb);
@@ -215,7 +222,11 @@ router.post("/logout", auth, dbSelector, async (req, res) => {
 /* ================= GET ALL USERS ================= */
 router.get("/", auth, async (req, res) => {
   try {
-    const users = await User.find().select("-password -activeToken");
+    const filter = {};
+    if (req.user.role !== "superadmin") {
+      filter.businessType = req.user.businessType;
+    }
+    const users = await User.find(filter).select("-password -activeToken");
     res.status(200).json({
       success: true,
       users,

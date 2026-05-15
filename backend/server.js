@@ -12,6 +12,8 @@ const startCronJobs = require("./utils/cronJobs");
 /* Middleware */
 app.use(cors());
 app.use(express.json());
+const activityLogger = require("./middleware/logger");
+app.use(activityLogger);
 // Serve uploaded files (logos, settings, etc.)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -31,6 +33,7 @@ app.use("/api/customers", require("./routes/Customer"));
 app.use("/api/suppliers", require("./routes/SupplierRoutes"));
 app.use("/api/general-settings", require("./routes/generalSettings_routes"));
 app.use("/api/logs", require("./routes/logRoutes"));
+app.use("/api/super-admin", require("./routes/superAdminRoutes"));
 
 /* Global Error Handler (Must be after all routes) */
 const errorHandler = require("./middleware/errorMiddleware");

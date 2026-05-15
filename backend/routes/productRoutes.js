@@ -91,6 +91,65 @@ router.put("/:id", async (req, res, next) => {
 });
 
 /**
+ * ARCHIVE BATCH
+ */
+router.post("/:id/batches/:batchId/archive", async (req, res, next) => {
+  try {
+    const { Product } = req.models;
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    const batchIndex = product.batches.findIndex(b => b._id.toString() === req.params.batchId);
+    if (batchIndex === -1) return res.status(404).json({ success: false, message: "Batch not found" });
+
+    const [batch] = product.batches.splice(batchIndex, 1);
+    product.archivedBatches.push({
+      batchNumber: batch.batchNumber,
+      expiryDate: batch.expiryDate,
+      quantity: batch.quantity,
+      archivedAt: new Date()
+    });
+
+    // Recalculate total quantity
+    product.quantity = product.batches.reduce((sum, b) => sum + b.quantity, 0);
+
+    await product.save();
+    res.json({ success: true, data: product });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * RESTORE BATCH
+ */
+router.post("/:id/archived-batches/:batchId/restore", async (req, res, next) => {
+  try {
+    const { Product } = req.models;
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    const archivedIndex = product.archivedBatches.findIndex(b => b._id.toString() === req.params.batchId);
+    if (archivedIndex === -1) return res.status(404).json({ success: false, message: "Archived batch not found" });
+
+    const [batch] = product.archivedBatches.splice(archivedIndex, 1);
+    product.batches.push({
+      batchNumber: batch.batchNumber,
+      expiryDate: batch.expiryDate,
+      quantity: batch.quantity
+    });
+
+    // Recalculate total quantity
+    product.quantity = product.batches.reduce((sum, b) => sum + b.quantity, 0);
+
+    await product.save();
+    res.json({ success: true, data: product });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * DELETE PRODUCT
  */
 router.delete("/:id", async (req, res, next) => {

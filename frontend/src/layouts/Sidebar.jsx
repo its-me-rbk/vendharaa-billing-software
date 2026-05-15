@@ -31,17 +31,25 @@ const cashierNavItems = [
   { title: 'Payments Due', icon: DollarSign, to: '/cashier/payments' },
 ];
 
+const superAdminNavItems = [
+  { section: 'Global Overview' },
+  { title: 'Consolidated Dashboard', icon: LayoutGrid, to: '/superadmin' },
+  { title: 'Activity Logs', icon: Clock, to: '/superadmin/logs' },
+  { section: 'Management' },
+  { title: 'User Management', icon: Users, to: '/superadmin/users' },
+];
+
 export default function Sidebar({ variant = 'admin', mobileOpen = false, onClose }) {
   const { user, logout, businessType } = useAuth();
   const { pharmacyName, logoUrl, licenseNumber } = useApp();
 
-  const navItems = variant === 'cashier' ? cashierNavItems : adminNavItems;
+  const navItems = variant === 'cashier' ? cashierNavItems : variant === 'superadmin' ? superAdminNavItems : adminNavItems;
 
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-    : variant === 'cashier' ? 'CS' : 'AD';
+    : variant === 'cashier' ? 'CS' : variant === 'superadmin' ? 'SA' : 'AD';
 
-  const basePath = variant === 'cashier' ? '/cashier' : '/admin';
+  const basePath = variant === 'cashier' ? '/cashier' : variant === 'superadmin' ? '/superadmin' : '/admin';
 
   return (
     <aside className={`pro-sidebar ${mobileOpen ? 'mobile-open' : ''}`}>

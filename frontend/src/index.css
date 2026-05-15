@@ -826,3 +826,19 @@ body[data-theme='pharma'] {
   --avatar-gradient-start: #3b82f6;
   --avatar-gradient-end: #1e40af;
 }
+
+body[data-theme='superadmin'] {
+  --sidebar-bg: #0f172a;
+  --sidebar-hover: #1e293b;
+  --sidebar-active: #0f172a;
+  --sidebar-active-bg: rgba(255, 255, 255, 0.1);
+  --accent: #0f172a;
+  --accent-light: #334155;
+  --accent-dark: #020617;
+  --accent-50: #f8fafc;
+  --accent-100: #f1f5f9;
+  --accent-glow: rgba(15, 23, 42, 0.25);
+  --nav-active-text: #f8fafc;
+  --avatar-gradient-start: #1e293b;
+  --avatar-gradient-end: #0f172a;
+}

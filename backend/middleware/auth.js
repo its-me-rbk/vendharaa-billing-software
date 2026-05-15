@@ -34,6 +34,13 @@ module.exports = async function (req, res, next) {
       });
     }
 
+    if (user.status === "inactive") {
+      return res.status(401).json({
+        success: false,
+        message: "Account deactivated",
+      });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

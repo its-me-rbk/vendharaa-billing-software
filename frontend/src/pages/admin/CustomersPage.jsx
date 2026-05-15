@@ -5,6 +5,7 @@ import notify from '../../components/ui/notify';
 import PageHeader from '../../components/common/PageHeader';
 import StatCard from '../../components/common/StatCard';
 import EmptyState from '../../components/common/EmptyState';
+import ConfirmModal from '../../components/common/ConfirmModal';
 
 function CustomerFormModal({ customer, onClose, onSaved }) {
   const isEdit = !!customer;
@@ -79,6 +80,7 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState({ open: false, customer: null });
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, customer: null });
 
   useEffect(() => { fetchCustomers(); }, []);
 
@@ -89,9 +91,15 @@ export default function CustomersPage() {
     setLoading(false);
   };
 
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete "${name}"?`)) return;
-    try { await api.delete(`/customers/${id}`); notify('Customer removed', 'success'); fetchCustomers(); }
+  const handleDelete = async () => {
+    const customer = confirmDelete.customer;
+    if (!customer) return;
+    try { 
+      await api.delete(`/customers/${customer._id}`); 
+      notify('Customer removed', 'success'); 
+      setConfirmDelete({ open: false, customer: null });
+      fetchCustomers(); 
+    }
     catch { notify('Failed to delete', 'error'); }
   };
 
@@ -125,13 +133,23 @@ export default function CustomersPage() {
                 <td><div className="flex flex-col gap-0.5">{c.phone && <span className="text-xs text-slate-600 flex items-center gap-1"><Phone size={10} /> {c.phone}</span>}{c.email && <span className="text-xs text-slate-400 flex items-center gap-1"><Mail size={10} /> {c.email}</span>}</div></td>
                 <td className="text-right font-bold text-slate-900">₹{(c.totalSpent||0).toLocaleString()}</td>
                 <td className="text-center"><span className="badge badge-orange">{c.loyaltyPoints||0} pts</span></td>
-                <td className="text-center"><div className="flex items-center justify-center gap-1"><button onClick={() => setModal({ open: true, customer: c })} className="action-btn edit"><Edit size={14} /></button><button onClick={() => handleDelete(c._id, c.name)} className="action-btn delete"><Trash2 size={14} /></button></div></td>
+                <td className="text-center"><div className="flex items-center justify-center gap-1"><button onClick={() => setModal({ open: true, customer: c })} className="action-btn edit"><Edit size={14} /></button><button onClick={() => setConfirmDelete({ open: true, customer: c })} className="action-btn delete"><Trash2 size={14} /></button></div></td>
               </tr>))}
             </tbody></table></div>
           )}
         </div>
       </div>
       {modal.open && <CustomerFormModal customer={modal.customer} onClose={() => setModal({ open: false, customer: null })} onSaved={() => { setModal({ open: false, customer: null }); fetchCustomers(); }} />}
+      
+      <ConfirmModal 
+        open={confirmDelete.open}
+        title="Remove Customer"
+        message={`Are you sure you want to remove ${confirmDelete.customer?.name}? This will delete their profile and history.`}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete({ open: false, customer: null })}
+        confirmText="Remove Customer"
+        variant="danger"
+      />
     </div>
   );
 }

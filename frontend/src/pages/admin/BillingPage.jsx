@@ -12,6 +12,7 @@ import notify from "../../components/ui/notify";
 import useBillingState from "./billing/useBillingState";
 import { buildPrintData, buildInvoiceHTML } from "./billing/invoiceTemplate";
 import { useAuth } from "../../context/AuthContext";
+import BillDetailModal from "./billing/BillDetailModal";
 
 export default function BillingPage() {
   const { businessType } = useAuth();
@@ -392,16 +393,16 @@ export default function BillingPage() {
                               disabled={isExpired}
                               onClick={() => state.setSelectedBatch(b)}
                               className={`p-3 rounded-xl border text-left transition-all relative ${
-                                isSelected ? 'border-accent bg-accent text-white shadow-lg shadow-accent-100' : 
-                                isExpired ? 'bg-red-50 border-red-100 opacity-50 cursor-not-allowed' : 'bg-white border-slate-200 hover:border-accent/50'
+                                isSelected ? 'border-blue-500 bg-blue-50 text-slate-900 shadow-sm' : 
+                                isExpired ? 'bg-red-50 border-red-100 opacity-50 cursor-not-allowed' : 'bg-white border-slate-200 hover:border-blue-300'
                               }`}
                             >
-                              <p className={`text-[10px] font-black uppercase ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>Batch: {b.batchNumber}</p>
-                              <p className="text-sm font-black mt-0.5">Qty: {b.quantity}</p>
-                              <p className={`text-[9px] font-bold mt-1 ${isSelected ? 'text-white/70' : isExpired ? 'text-red-600' : 'text-slate-500'}`}>
+                              <p className={`text-[10px] font-black uppercase ${isSelected ? 'text-slate-900/60' : 'text-slate-400'}`}>Batch: {b.batchNumber}</p>
+                              <p className={`text-sm font-black mt-0.5 ${isSelected ? 'text-slate-900' : 'text-slate-900'}`}>Qty: {b.quantity}</p>
+                              <p className={`text-[9px] font-bold mt-1 ${isSelected ? 'text-slate-900/50' : isExpired ? 'text-red-600' : 'text-slate-500'}`}>
                                 {isExpired ? 'EXPIRED' : `Exp: ${new Date(b.expiryDate).toLocaleDateString()}`}
                               </p>
-                              {isSelected && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-white animate-ping" />}
+                              {isSelected && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />}
                             </button>
                           );
                         })}
@@ -792,6 +793,16 @@ export default function BillingPage() {
           </div>
         </div>
       </div>
+
+      {/* Bill Detail Modal */}
+      {state.selectedBill && (
+        <BillDetailModal
+          bill={state.selectedBill}
+          onClose={() => state.setSelectedBill(null)}
+          onPrint={() => printBill(state.selectedBill._id)}
+          onDownload={() => downloadBill(state.selectedBill._id)}
+        />
+      )}
     </div>
   );
 }

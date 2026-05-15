@@ -9,6 +9,7 @@ import LoadingScreen from './components/common/LoadingScreen';
 /* ─── Layouts ─── */
 const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
 const CashierLayout = lazy(() => import('./layouts/CashierLayout'));
+const SuperAdminLayout = lazy(() => import('./layouts/SuperAdminLayout'));
 
 /* ─── Auth ─── */
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
@@ -30,6 +31,11 @@ const CashierDashboardPage = lazy(() => import('./pages/cashier/CashierDashboard
 const CashierBillingPage = lazy(() => import('./pages/cashier/CashierBillingPage'));
 const CashierPaymentsDuePage = lazy(() => import('./pages/cashier/CashierPaymentsDuePage'));
 
+/* ─── Super Admin Pages ─── */
+const SuperDashboard = lazy(() => import('./pages/superadmin/SuperDashboard.jsx'));
+const ActivityLogs = lazy(() => import('./pages/superadmin/ActivityLogs.jsx'));
+const SuperUserManagement = lazy(() => import('./pages/superadmin/UserManagement.jsx'));
+
 function AppRoutes() {
   const { isAuthenticated, role, businessType } = useAuth();
 
@@ -49,7 +55,7 @@ function AppRoutes() {
           path="/"
           element={
             isAuthenticated
-              ? <Navigate to={role === 'Cashier' ? '/cashier' : '/admin'} replace />
+              ? <Navigate to={role === 'SuperAdmin' ? '/superadmin' : role === 'Cashier' ? '/cashier' : '/admin'} replace />
               : <LoginPage />
           }
         />
@@ -87,6 +93,20 @@ function AppRoutes() {
           <Route index element={<CashierDashboardPage />} />
           <Route path="billing" element={<CashierBillingPage />} />
           <Route path="payments" element={<CashierPaymentsDuePage />} />
+        </Route>
+
+        {/* ─── Super Admin Routes ─── */}
+        <Route
+          path="/superadmin"
+          element={
+            <ProtectedRoute requiredRole="superadmin">
+              <SuperAdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<SuperDashboard />} />
+          <Route path="logs" element={<ActivityLogs />} />
+          <Route path="users" element={<SuperUserManagement />} />
         </Route>
 
         {/* ─── Catch-all ─── */}

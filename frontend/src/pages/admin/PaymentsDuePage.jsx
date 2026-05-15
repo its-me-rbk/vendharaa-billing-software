@@ -53,6 +53,35 @@ export default function PaymentsDuePage() {
     return (!b.paid) || bal > 0 || (b.status && b.status === 'Partial') || (b.status && b.status === 'Unpaid');
   });
 
+  const getAgingDays = (date) => {
+    const diff = new Date() - new Date(date);
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const overdue15 = pending.filter(b => getAgingDays(b.createdAt) >= 15 && getAgingDays(b.createdAt) < 30).length;
+  const overdue30 = pending.filter(b => getAgingDays(b.createdAt) >= 30).length;
+
+  const sortedFiltered = [...filtered].sort((a, b) => {
+    // Primary sort: Pending bills first
+    const aPending = !a.paid || (a.balance || 0) > 0;
+    const bPending = !b.paid || (b.balance || 0) > 0;
+    
+    if (aPending && !bPending) return -1;
+    if (!aPending && bPending) return 1;
+    
+    // Secondary sort: By Invoice Number (descending to show latest numbers first)
+    // Assumes format like INV/1234 or #1234
+    const aNum = String(a.invoice || '').match(/\d+/)?.map(Number)[0] || 0;
+    const bNum = String(b.invoice || '').match(/\d+/)?.map(Number)[0] || 0;
+    
+    if (aNum !== bNum) {
+      return bNum - aNum;
+    }
+    
+    // Fallback: Date
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+
   return (
     <div>
       <PageHeader title="Payments Due" subtitle="Pending bills are shown on top for quick action"
@@ -64,11 +93,37 @@ export default function PaymentsDuePage() {
 
       <div className="page-content space-y-8">
         {/* Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard icon={AlertTriangle} label="Total Outstanding" value={`₹${pending.reduce((acc, b) => acc + (b.balance || 0), 0).toLocaleString()}`} iconBg="bg-red-100" iconColor="text-red-600" />
           <StatCard icon={Clock} label="Pending Invoices" value={pending.length} iconBg="bg-amber-100" iconColor="text-amber-600" />
-          <StatCard icon={UsersIcon} label="Customer Dues" value={new Set(pending.map(b => b.customerName)).size} iconBg="bg-emerald-100" iconColor="text-emerald-600" />
+          <StatCard icon={AlertTriangle} label="15+ Days Due" value={overdue15} iconBg="bg-orange-100" iconColor="text-orange-600" />
+          <StatCard icon={AlertTriangle} label="30+ Days Due" value={overdue30} iconBg="bg-red-500" iconColor="text-white" />
         </div>
+
+        {/* Urgent Alerts */}
+        {(overdue15 > 0 || overdue30 > 0) && (
+          <div className="space-y-3">
+            {overdue30 > 0 && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                    <AlertTriangle size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-red-900 uppercase tracking-tight">Critical Overdue Attention</p>
+                    <p className="text-[11px] text-red-700 font-bold">{overdue30} bills are pending for more than 30 days. Priority follow-up required.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {overdue15 > 0 && (
+              <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-center gap-3">
+                <Clock size={18} className="text-orange-600" />
+                <p className="text-xs font-bold text-orange-800">{overdue15} bills have crossed the 15-day credit period.</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Table */}
         <div className="card-pro overflow-hidden">
@@ -91,9 +146,15 @@ export default function PaymentsDuePage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(b => (
-                  <React.Fragment key={b._id}>
-                    <tr className="hover:bg-slate-50 transition-colors">
+                {sortedFiltered.map(b => {
+                  const aging = getAgingDays(b.createdAt);
+                  const isPending = !b.paid || (b.balance || 0) > 0;
+                  const isUrgent = isPending && aging >= 30;
+                  const isWarning = isPending && aging >= 15;
+
+                  return (
+                    <React.Fragment key={b._id}>
+                      <tr className={`transition-colors ${isUrgent ? 'bg-red-50/30' : isWarning ? 'bg-orange-50/20' : 'hover:bg-slate-50'}`}>
                       <td>
                         <button onClick={() => setExpandedRows(prev => ({ ...prev, [b._id]: !prev[b._id] }))}
                           className="p-1 rounded hover:bg-slate-200 text-slate-500 transition-colors">
@@ -102,8 +163,15 @@ export default function PaymentsDuePage() {
                       </td>
                       <td>
                         <div className="flex flex-col">
-                          <span className="font-bold text-slate-800">{b.invoice}</span>
-                          <span className="text-[10px] text-slate-500">{new Date(b.createdAt).toLocaleDateString('en-IN')}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-800">{b.invoice}</span>
+                            {isUrgent && <span className="text-[9px] font-black bg-red-600 text-white px-1.5 py-0.5 rounded uppercase">Critical</span>}
+                            {isWarning && !isUrgent && <span className="text-[9px] font-black bg-orange-500 text-white px-1.5 py-0.5 rounded uppercase">Overdue</span>}
+                          </div>
+                          <span className="text-[10px] text-slate-500">
+                            {new Date(b.createdAt).toLocaleDateString('en-IN')} 
+                            {isPending && <span className="ml-2 font-bold text-slate-400">({aging} days old)</span>}
+                          </span>
                         </div>
                       </td>
                       <td>
@@ -173,7 +241,8 @@ export default function PaymentsDuePage() {
                       </tr>
                     )}
                   </React.Fragment>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>

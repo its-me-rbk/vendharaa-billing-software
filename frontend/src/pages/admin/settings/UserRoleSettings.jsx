@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Users, Plus, Edit, Trash2, ArrowLeft, Save, UserCircle } from 'lucide-react';
 import api from '../../../services/api';
 import notify from '../../../components/ui/notify';
+import ConfirmModal from '../../../components/common/ConfirmModal';
 
 function UserAddEditForm({ initialData, onDone }) {
   const isEdit = !!initialData;
@@ -96,6 +97,7 @@ export default function UserRoleSettings() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editUser, setEditUser] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, user: null });
 
   const fetchUsers = async () => {
     try { const r = await api.get('/users'); setUsers(Array.isArray(r.data?.users) ? r.data.users : []); }
@@ -140,9 +142,11 @@ export default function UserRoleSettings() {
                   <div><p className="font-bold text-slate-800 text-sm">{u.name}</p><p className="text-xs text-slate-500">{u.email}</p></div>
                 </div>
                 <div className="flex items-center gap-3">
+                  <span className={`badge ${u.businessType === 'agro' ? 'badge-green' : 'badge-blue'}`}>{u.businessType?.toUpperCase()}</span>
+                  <span className={`badge ${u.status === 'inactive' ? 'badge-red' : 'badge-green'}`}>{u.status || 'active'}</span>
                   <span className={`badge ${u.role === 'admin' ? 'badge-green' : 'badge-gray'}`}>{u.role}</span>
                   <button onClick={() => { setEditUser(u); setShowForm(true); }} className="action-btn edit"><Edit size={14} /></button>
-                  <button onClick={async () => { if (!confirm(`Delete ${u.name}?`)) return; try { await api.delete(`/users/${u._id}`); notify('User deleted', 'success'); fetchUsers(); } catch { notify('Failed', 'error'); } }} className="action-btn delete"><Trash2 size={14} /></button>
+                  <button onClick={() => setConfirmDelete({ open: true, user: u })} className="action-btn delete"><Trash2 size={14} /></button>
                 </div>
               </div>
             ))}
@@ -158,6 +162,23 @@ export default function UserRoleSettings() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal 
+        open={confirmDelete.open}
+        title="Delete User Account"
+        message={`Are you sure you want to delete ${confirmDelete.user?.name}? This will permanently remove their access.`}
+        onConfirm={async () => {
+          try { 
+            await api.delete(`/users/${confirmDelete.user._id}`); 
+            notify('User deleted', 'success'); 
+            setConfirmDelete({ open: false, user: null });
+            fetchUsers(); 
+          } catch { notify('Failed to delete', 'error'); }
+        }}
+        onCancel={() => setConfirmDelete({ open: false, user: null })}
+        confirmText="Delete User"
+        variant="danger"
+      />
     </div>
   );
 }
