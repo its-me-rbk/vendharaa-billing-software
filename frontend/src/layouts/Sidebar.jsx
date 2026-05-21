@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutGrid, Package, ShoppingCart, DollarSign, Users, Truck, BarChart3,
-  Tag, Settings, LogOut, Leaf, Pill, Clock, X,
+  Tag, Settings, LogOut, Leaf, Pill, Clock, X, User
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -21,7 +21,7 @@ const adminNavItems = [
   { title: 'Reports', icon: BarChart3, to: '/admin/reports' },
   { section: 'System' },
   { title: 'Sessions', icon: Clock, to: '/admin/sessions' },
-  { title: 'Settings', icon: Settings, to: '/admin/settings' },
+  { title: 'User Profile', icon: User, to: '/admin/profile' },
 ];
 
 const cashierNavItems = [
@@ -29,6 +29,8 @@ const cashierNavItems = [
   { title: 'Dashboard', icon: LayoutGrid, to: '/cashier' },
   { title: 'Billing', icon: ShoppingCart, to: '/cashier/billing' },
   { title: 'Payments Due', icon: DollarSign, to: '/cashier/payments' },
+  { section: 'System' },
+  { title: 'User Profile', icon: User, to: '/cashier/profile' },
 ];
 
 const superAdminNavItems = [
@@ -37,6 +39,7 @@ const superAdminNavItems = [
   { title: 'Activity Logs', icon: Clock, to: '/superadmin/logs' },
   { section: 'Management' },
   { title: 'User Management', icon: Users, to: '/superadmin/users' },
+  { title: 'Global Settings', icon: Settings, to: '/superadmin/settings' },
 ];
 
 export default function Sidebar({ variant = 'admin', mobileOpen = false, onClose }) {

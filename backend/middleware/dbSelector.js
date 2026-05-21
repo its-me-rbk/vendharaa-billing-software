@@ -8,7 +8,12 @@ module.exports = function (req, res, next) {
     return next();
   }
 
-  const businessType = req.user.businessType;
+  let businessType = req.user.businessType;
+  
+  if (req.user.role === 'superadmin' && req.headers['x-business-type']) {
+    businessType = req.headers['x-business-type'];
+  }
+
   const connection = getConnection(businessType);
 
   if (!connection) {

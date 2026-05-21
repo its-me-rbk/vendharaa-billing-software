@@ -7,6 +7,7 @@ const superAdminService = {
   addUser: (data) => api.post('/super-admin/users', data),
   deleteUser: (id) => api.delete(`/super-admin/users/${id}`),
   updateUser: (id, data) => api.put(`/super-admin/users/${id}`, data),
+  resetPassword: (id, password) => api.put(`/super-admin/users/${id}/reset-password`, { password }),
 };
 
 export default superAdminService;

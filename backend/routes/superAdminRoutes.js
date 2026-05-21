@@ -134,6 +134,23 @@ router.put("/users/:id", async (req, res) => {
   }
 });
 
+router.put("/users/:id/reset-password", async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ success: false, message: "Password is required" });
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    user.password = await bcrypt.hash(password, 10);
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 router.delete("/users/:id", async (req, res) => {
   try {
     if (req.params.id === req.user.id) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Search, Edit, Trash2, Mail, Shield, X, Save, Eye, Calendar, MapPin, Activity } from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Mail, Shield, X, Save, Eye, Calendar, MapPin, Activity, Key } from 'lucide-react';
 import superAdminService from '../../services/superAdminService';
 import PageHeader from '../../components/common/PageHeader';
 import StatCard from '../../components/common/StatCard';
@@ -66,6 +66,57 @@ function UserDetailsModal({ user, onClose }) {
             Close View
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ResetPasswordModal({ user, onClose }) {
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!password) return toast.error('Please enter a new password');
+    setSubmitting(true);
+    try {
+      await superAdminService.resetPassword(user._id, password);
+      toast.success('Password reset successfully');
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reset password');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-xl w-full max-w-sm shadow-xl animate-slide-up overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center"><Key size={18} className="text-slate-900" /></div>
+            <div><h2 className="text-base font-bold text-slate-900">Reset Password</h2><p className="text-[11px] text-slate-500 mt-0.5">For: {user.name}</p></div>
+          </div>
+          <button onClick={onClose} className="action-btn"><X size={18} /></button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="p-6">
+            <label className="pro-label">New Password</label>
+            <input 
+              type="password" required className="pro-input" 
+              value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="Enter new password"
+              autoFocus
+            />
+          </div>
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/30">
+            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+            <button type="submit" disabled={submitting} className="btn-primary">
+              <Save size={15} /> {submitting ? 'Resetting…' : 'Reset Password'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -201,6 +252,7 @@ export default function SuperUserManagement() {
   const [modal, setModal] = useState({ open: false, user: null });
   const [detailsModal, setDetailsModal] = useState({ open: false, user: null });
   const [confirmDelete, setConfirmDelete] = useState({ open: false, user: null });
+  const [resetModal, setResetModal] = useState({ open: false, user: null });
 
   useEffect(() => {
     fetchUsers();
@@ -339,6 +391,13 @@ export default function SuperUserManagement() {
                           >
                             <Edit size={14} />
                           </button>
+                          <button 
+                            onClick={() => setResetModal({ open: true, user: u })} 
+                            className="action-btn"
+                            title="Reset Password"
+                          >
+                            <Key size={14} className="text-amber-600" />
+                          </button>
                           {u.role !== 'superadmin' && (
                             <button 
                               onClick={() => setConfirmDelete({ open: true, user: u })} 
@@ -383,6 +442,12 @@ export default function SuperUserManagement() {
         confirmText="Delete Account"
         variant="danger"
       />
+      {resetModal.open && (
+        <ResetPasswordModal 
+          user={resetModal.user} 
+          onClose={() => setResetModal({ open: false, user: null })} 
+        />
+      )}
     </div>
   );
 }

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice 26VMA01006446 – A3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:      #1B3685;
+  --blue-amt:  #1D4ED8;
+  --panel-bg:  #1E3A6E;
+  --ink:       #1A1A2E;
+  --ink-mid:   #374151;
+  --ink-light: #6B7280;
+  --ink-faint: #9CA3AF;
+  --border:    #E5E7EB;
+  --border-m:  #D1D5DB;
+  --row-alt:   #F8FAFD;
+  --hdr-bg:    #F1F5FD;
+  --card-bg:   #F4F6FA;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #C8CEDF;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── PAGE SHELL ── */
+.page {
+  width: 1123px;       /* A3 at 96dpi */
+  min-height: 1587px;
+  margin: 32px auto;
+  background: #fff;
+  padding: 48px 54px 52px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 32px rgba(0,0,0,.13);
+}
+
+.page::before, .page::after {
+  content:'';position:absolute;border-radius:50%;pointer-events:none;z-index:0;
+}
+.page::before { width:560px;height:560px;background:radial-gradient(circle,rgba(27,54,133,.04) 0%,transparent 70%);right:-120px;bottom:280px; }
+.page::after  { width:380px;height:380px;background:radial-gradient(circle,rgba(27,54,133,.035) 0%,transparent 70%);left:-70px;bottom:160px; }
+.page > * { position:relative;z-index:1; }
+
+.stamp { position:absolute;top:0;right:0;width:120px;height:120px;overflow:hidden;z-index:10; }
+.stamp span {
+  position:absolute;top:28px;right:-28px;
+  background:#C0392B;color:#fff;font-size:11px;font-weight:700;
+  letter-spacing:.13em;text-transform:uppercase;padding:4px 36px;
+  transform:rotate(45deg);white-space:nowrap;
+}
+
+/* ── HEADER ── */
+.header { display:flex;justify-content:space-between;align-items:flex-start;gap:32px;margin-bottom:26px; }
+.co-name { font-size:38px;font-weight:700;color:var(--navy);letter-spacing:-.5px;margin-bottom:14px; }
+.meta-row { display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-mid);margin-bottom:4px; }
+.meta-row svg { flex-shrink:0;color:var(--ink-light); }
+
+.inv-box {
+  background:var(--hdr-bg);border-radius:10px;padding:18px 26px 20px;
+  text-align:right;min-width:280px;border:1px solid #DDE3F3;flex-shrink:0;
+}
+.lbl { font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-light);margin-bottom:3px; }
+.inv-num { font-size:24px;font-weight:700;color:var(--navy);letter-spacing:-.3px;margin-bottom:14px; }
+.inv-date { font-size:18px;font-weight:700;color:var(--ink); }
+
+hr.div { border:none;border-top:1px solid var(--border);margin:22px 0; }
+
+/* ── BILL TO ── */
+.bill-sec { display:flex;justify-content:space-between;align-items:flex-start;gap:32px;margin-bottom:28px; }
+.bill-card { background:var(--card-bg);border-radius:10px;padding:18px 22px;border:1px solid #E2E8F2;flex:0 0 auto;max-width:480px; }
+.bill-co { font-size:22px;font-weight:700;color:var(--ink);margin:6px 0 5px; }
+.bill-addr { font-size:13.5px;color:var(--ink-mid);line-height:1.65; }
+.amt-block { text-align:right;flex-shrink:0; }
+.amt-lbl { font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-light);margin-bottom:5px; }
+.amt-val { font-size:52px;font-weight:700;color:var(--blue-amt);letter-spacing:-.8px;line-height:1.05;margin-bottom:10px; }
+.net-badge { display:inline-block;background:#2563EB;color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.09em;padding:4px 14px;border-radius:5px;text-transform:uppercase; }
+
+/* ── TABLE ── */
+.tbl-wrap { width:100%;border-radius:10px;border:1px solid var(--border);margin-bottom:32px;overflow:hidden; }
+table.items { width:100%;border-collapse:collapse;font-size:14px; }
+table.items thead tr { background:var(--hdr-bg); }
+table.items thead th {
+  font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-light);padding:13px 10px;text-align:left;border-bottom:1px solid var(--border-m);white-space:nowrap;
+}
+table.items th.r, table.items td.r { text-align:right; }
+table.items th.c, table.items td.c { text-align:center; }
+table.items tbody tr:nth-child(odd)  { background:var(--row-alt); }
+table.items tbody tr:nth-child(even) { background:#fff; }
+table.items tbody td { padding:11px 10px;border-bottom:1px solid var(--border);color:var(--ink-mid);vertical-align:middle; }
+table.items tbody tr:last-child td { border-bottom:none; }
+td.sno  { color:var(--ink-light);font-weight:500;font-size:13px;padding-left:18px;width:46px; }
+td.mfr  { font-weight:700;color:var(--navy);font-size:13px;width:56px; }
+td.desc { font-weight:500;color:var(--ink); }
+td.desc .pack { font-size:12.5px;font-weight:400;color:var(--ink-light); }
+td.tot  { font-weight:700;color:var(--ink);text-align:right;padding-right:18px;white-space:nowrap;font-size:14px; }
+
+/* ── BOTTOM 3-COL ── */
+.bot { display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;margin-bottom:30px;align-items:start; }
+.sec-title { font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-light);margin-bottom:12px; }
+
+.pay-box { background:#fff;border:1px solid var(--border-m);border-radius:8px;padding:14px 16px;margin-bottom:10px; }
+.pay-row { display:flex;justify-content:space-between;padding:5px 0;font-size:13.5px;border-bottom:1px solid var(--border); }
+.pay-row:last-child { border-bottom:none; }
+.pay-row .pk { color:var(--ink-light); }
+.pay-row .pv { font-weight:700;color:var(--ink); }
+.pay-notes { font-size:11.5px;color:var(--ink-faint);line-height:1.6;margin-top:9px; }
+
+.tax-row { display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-bottom:1px solid var(--border); }
+.tax-row:last-child { border-bottom:none;font-weight:700;font-size:15.5px;padding-top:11px; }
+.tax-row:last-child .tv { color:var(--blue-amt); }
+.tax-row .tk { color:var(--ink-mid); }
+.tax-row .tv { font-weight:500;color:var(--ink); }
+
+.gt-box { background:var(--panel-bg);border-radius:12px;padding:28px 24px;color:#fff; }
+.gt-lbl  { font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px; }
+.gt-val  { font-size:42px;font-weight:700;color:#fff;letter-spacing:-.6px;line-height:1.1;margin-bottom:18px; }
+.wl      { font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.44);margin-bottom:6px; }
+.wt      { font-size:14px;color:rgba(255,255,255,.84);line-height:1.6; }
+
+/* ── PERSONNEL ── */
+.pers-sec { border-top:1px solid var(--border);padding-top:24px;margin-bottom:28px; }
+.pers-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px 28px;background:#F8FAFD;border:1px solid var(--border);border-radius:8px;padding:16px 20px; }
+.pr { display:flex;justify-content:space-between;padding:4px 0;font-size:13.5px;border-bottom:1px solid var(--border); }
+.pr:last-child { border-bottom:none; }
+.pr .prl { color:var(--ink-light); }
+.pr .prv { font-weight:700;color:var(--ink); }
+
+/* ── SIGNATURES ── */
+.sigs { display:grid;grid-template-columns:1fr 1fr 1fr;padding-top:18px; }
+.sig-b { display:flex;flex-direction:column; }
+.sig-b.center { align-items:center; }
+.sig-b.right { align-items:flex-end; }
+.sig-line { border-top:1px solid var(--border-m);margin-bottom:5px;width:100%; }
+.sig-lbl { font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-light); }
+.sig-for { font-size:13px;font-weight:600;color:var(--ink-mid);margin-bottom:4px;text-align:center; }
+
+/* ── PRINT ── */
+@media print {
+  @page { size: A3 portrait; margin: 14mm 16mm; }
+  body { background:#fff; }
+  .page { width:100%;margin:0;padding:0;box-shadow:none; }
+  .page::before, .page::after { display:none; }
+  .bot, .pers-grid, .sigs { page-break-inside:avoid; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="stamp" aria-label="Processed"><span>PROCESSED</span></div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div>
+      <div class="co-name">Vendharaa Pharmaceuticals</div>
+      <div class="meta-row">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        1/167 Ground Floor, Ungaranahalli Village &amp; Panchayat, Dharmapuri (Taluk), Dharmapuri - 636704
+      </div>
+      <div class="meta-row">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        DL No: TN/DPI/20B&amp;21B/01959
+      </div>
+      <div class="meta-row">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        GSTIN:
+      </div>
+      <div class="meta-row">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.49 12 19.79 19.79 0 0 1 1.21 3.53 2 2 0 0 1 3.18 1h3a2 2 0 0 1 2 1.72 17.65 17.65 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.29 6.29l1.42-1.42a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        +91 94429 59826 &nbsp;|&nbsp; vendharaapharmaceuticals@gmail.com
+      </div>
+    </div>
+    <div class="inv-box">
+      <div class="lbl">Invoice Number</div>
+      <div class="inv-num">26VMA01006446</div>
+      <div class="lbl">Billing Date</div>
+      <div class="inv-date">30/03/2026</div>
+    </div>
+  </header>
+
+  <hr class="div">
+
+  <!-- BILL TO -->
+  <section class="bill-sec">
+    <div class="bill-card">
+      <div class="lbl">Bill To (Customer)</div>
+      <div class="bill-co">GREEN DWARF TECH LLP</div>
+      <div class="bill-addr">
+        162, Chinnamapuram, Ganapathypalayam, Erode, Tamilnadu, India<br>
+        GSTIN: NIL &nbsp;|&nbsp; DL: 32/DR/TN/2025<br>
+        Phone: 9865981122 &nbsp;|&nbsp; Email: Support@greendwarftech.com
+      </div>
+    </div>
+    <div class="amt-block">
+      <div class="amt-lbl">Amount Due</div>
+      <div class="amt-val">₹34,139.86</div>
+      <span class="net-badge">NET 30 TERMS</span>
+    </div>
+  </section>
+
+  <!-- ITEMS TABLE -->
+  <div class="tbl-wrap">
+    <table class="items">
+      <thead>
+        <tr>
+          <th style="padding-left:18px;width:46px">S.No</th>
+          <th style="width:52px">MFR</th>
+          <th>Description &amp; Packing</th>
+          <th class="c" style="width:56px">HSN</th>
+          <th class="c" style="width:80px">Batch</th>
+          <th class="c" style="width:54px">Exp</th>
+          <th class="c" style="width:46px">Qty</th>
+          <th class="c" style="width:52px">Free</th>
+          <th class="c" style="width:58px">Dis%</th>
+          <th class="r"  style="width:72px">MRP</th>
+          <th class="c" style="width:54px">GST%</th>
+          <th class="r"  style="padding-right:18px;width:100px">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="sno">01</td><td class="mfr">CHE</td><td class="desc">OSTOGRAND LI 1LTR <span class="pack">(10 Bots)</span></td><td class="c">3004</td><td class="c">B240501</td><td class="c">05/26</td><td class="c">20</td><td class="c">2</td><td class="c">2.00</td><td class="r">1540.00</td><td class="c">12%</td><td class="tot">₹28,644.00</td></tr>
+        <tr><td class="sno">02</td><td class="mfr">SUN</td><td class="desc">VOLINI GEL 30G <span class="pack">(12 Tubes)</span></td><td class="c">3004</td><td class="c">VG9821</td><td class="c">12/25</td><td class="c">10</td><td class="c">0</td><td class="c">0.00</td><td class="r">220.00</td><td class="c">12%</td><td class="tot">₹2,192.00</td></tr>
+        <tr><td class="sno">03</td><td class="mfr">CIP</td><td class="desc">PARACETAMOL 500MG <span class="pack">(15 Tabs)</span></td><td class="c">3004</td><td class="c">CP2210</td><td class="c">08/26</td><td class="c">50</td><td class="c">5</td><td class="c">5.00</td><td class="r">32.00</td><td class="c">12%</td><td class="tot">₹1,440.00</td></tr>
+        <tr><td class="sno">04</td><td class="mfr">GLX</td><td class="desc">AUGMENTIN 625 DUO <span class="pack">(6 Tabs)</span></td><td class="c">3004</td><td class="c">AG7712</td><td class="c">11/25</td><td class="c">15</td><td class="c">1</td><td class="c">0.00</td><td class="r">180.00</td><td class="c">12%</td><td class="tot">₹2,680.00</td></tr>
+        <tr><td class="sno">05</td><td class="mfr">ABT</td><td class="desc">BRUFEN 400MG <span class="pack">(10 Tabs)</span></td><td class="c">3004</td><td class="c">BR1120</td><td class="c">02/26</td><td class="c">25</td><td class="c">0</td><td class="c">2.50</td><td class="r">24.00</td><td class="c">12%</td><td class="tot">₹585.00</td></tr>
+        <tr><td class="sno">06</td><td class="mfr">LUP</td><td class="desc">GLUCONORM-G2 <span class="pack">(15 Tabs)</span></td><td class="c">3004</td><td class="c">GL8933</td><td class="c">09/25</td><td class="c">12</td><td class="c">1</td><td class="c">0.00</td><td class="r">145.00</td><td class="c">12%</td><td class="tot">₹1,740.00</td></tr>
+        <tr><td class="sno">07</td><td class="mfr">DRR</td><td class="desc">ECONORM 250MG <span class="pack">(Sachet)</span></td><td class="c">3004</td><td class="c">EC4451</td><td class="c">04/26</td><td class="c">30</td><td class="c">3</td><td class="c">3.00</td><td class="r">48.00</td><td class="c">12%</td><td class="tot">₹1,396.00</td></tr>
+        <tr><td class="sno">08</td><td class="mfr">MAN</td><td class="desc">TELVAS-AM 40/5 <span class="pack">(10 Tabs)</span></td><td class="c">3004</td><td class="c">TA0091</td><td class="c">10/26</td><td class="c">10</td><td class="c">0</td><td class="c">0.00</td><td class="r">85.00</td><td class="c">12%</td><td class="tot">₹850.00</td></tr>
+        <tr><td class="sno">09</td><td class="mfr">ALK</td><td class="desc">PAN 40MG <span class="pack">(15 Tabs)</span></td><td class="c">3004</td><td class="c">PA1122</td><td class="c">01/26</td><td class="c">20</td><td class="c">2</td><td class="c">0.00</td><td class="r">120.00</td><td class="c">12%</td><td class="tot">₹2,400.00</td></tr>
+        <tr><td class="sno">10</td><td class="mfr">INT</td><td class="desc">L-HIST 5MG <span class="pack">(10 Tabs)</span></td><td class="c">3004</td><td class="c">LH5567</td><td class="c">06/25</td><td class="c">40</td><td class="c">4</td><td class="c">10.00</td><td class="r">55.00</td><td class="c">12%</td><td class="tot">₹1,980.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- BOTTOM 3 COLS -->
+  <div class="bot">
+    <div>
+      <div class="sec-title">Payment Details</div>
+      <div class="pay-box">
+        <div class="pay-row"><span class="pk">Bank:</span><span class="pv">Indian Bank</span></div>
+        <div class="pay-row"><span class="pk">Branch:</span><span class="pv">Harur Branch</span></div>
+        <div class="pay-row"><span class="pk">IFSC:</span><span class="pv">IDIB000012</span></div>
+        <div class="pay-row"><span class="pk">Account:</span><span class="pv">6021234678</span></div>
+      </div>
+      <div class="pay-notes">* Medicine once sold will not be taken back.<br>* Interest @18% will be charged for delayed payments.</div>
+    </div>
+    <div>
+      <div class="sec-title">Tax Summary</div>
+      <div class="tax-row"><span class="tk">Taxable Amount</span><span class="tv">27,532.14</span></div>
+      <div class="tax-row"><span class="tk">CGST (6%)</span><span class="tv">1,651.93</span></div>
+      <div class="tax-row"><span class="tk">SGST (6%)</span><span class="tv">1,651.93</span></div>
+      <div class="tax-row"><span class="tk">Total GST</span><span class="tv">₹3,303.86</span></div>
+    </div>
+    <div class="gt-box">
+      <div class="gt-lbl">Grand Total</div>
+      <div class="gt-val">₹30,836.00</div>
+      <div class="wl">Amount in Words</div>
+      <div class="wt">Rupees Thirty Thousand Eight Hundred and Thirty Six Only</div>
+    </div>
+  </div>
+
+  <!-- PERSONNEL -->
+  <section class="pers-sec">
+    <div class="sec-title" style="margin-bottom:12px">Personnel &amp; Order Details</div>
+    <div class="pers-grid">
+      <div>
+        <div class="pr"><span class="prl">Billed By:</span><span class="prv">ADMIN_VMA</span></div>
+        <div class="pr"><span class="prl">Packed By:</span><span class="prv">SK_RAVI</span></div>
+      </div>
+      <div>
+        <div class="pr"><span class="prl">Checked By:</span><span class="prv">QA_MANI</span></div>
+        <div class="pr"><span class="prl">Delivery Type:</span><span class="prv">SURFACE (VECH-04)</span></div>
+      </div>
+      <div>
+        <div class="pr"><span class="prl">Salesman Name:</span><span class="prv">G. RAJESH</span></div>
+        <div class="pr"><span class="prl">Salesman Contact:</span><span class="prv">+91 99887 76655</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIGNATURES -->
+  <div class="sigs">
+    <div class="sig-b"><div style="height:48px"></div><div class="sig-line"></div><div class="sig-lbl">Receiver's Signature</div></div>
+    <div class="sig-b center"><div style="height:48px"></div><div class="sig-for">for VISHNU MEDICAL AGENCIES</div></div>
+    <div class="sig-b right"><div style="height:48px"></div><div class="sig-line"></div><div class="sig-lbl">Authorized Signatory</div></div>
+  </div>
+
+</div>
+</body>
+</html>

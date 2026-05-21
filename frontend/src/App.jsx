@@ -24,7 +24,7 @@ const CustomersPage = lazy(() => import('./pages/admin/CustomersPage'));
 const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
 const SessionsPage = lazy(() => import('./pages/admin/SessionsPage'));
 const OffersPage = lazy(() => import('./pages/admin/OffersPage'));
-const SettingsPage = lazy(() => import('./pages/admin/settings/SettingsPage'));
+const UserProfilePage = lazy(() => import('./pages/admin/settings/UserProfilePage'));
 
 /* ─── Cashier Pages ─── */
 const CashierDashboardPage = lazy(() => import('./pages/cashier/CashierDashboardPage'));
@@ -35,6 +35,7 @@ const CashierPaymentsDuePage = lazy(() => import('./pages/cashier/CashierPayment
 const SuperDashboard = lazy(() => import('./pages/superadmin/SuperDashboard.jsx'));
 const ActivityLogs = lazy(() => import('./pages/superadmin/ActivityLogs.jsx'));
 const SuperUserManagement = lazy(() => import('./pages/superadmin/UserManagement.jsx'));
+const SuperSettingsPage = lazy(() => import('./pages/superadmin/SuperSettingsPage.jsx'));
 
 function AppRoutes() {
   const { isAuthenticated, role, businessType } = useAuth();
@@ -78,7 +79,7 @@ function AppRoutes() {
           <Route path="reports" element={<ReportsPage />} />
           <Route path="sessions" element={<SessionsPage />} />
           <Route path="offers" element={<OffersPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route path="profile" element={<UserProfilePage />} />
         </Route>
 
         {/* ─── Cashier Routes ─── */}
@@ -93,6 +94,7 @@ function AppRoutes() {
           <Route index element={<CashierDashboardPage />} />
           <Route path="billing" element={<CashierBillingPage />} />
           <Route path="payments" element={<CashierPaymentsDuePage />} />
+          <Route path="profile" element={<UserProfilePage />} />
         </Route>
 
         {/* ─── Super Admin Routes ─── */}
@@ -107,6 +109,7 @@ function AppRoutes() {
           <Route index element={<SuperDashboard />} />
           <Route path="logs" element={<ActivityLogs />} />
           <Route path="users" element={<SuperUserManagement />} />
+          <Route path="settings" element={<SuperSettingsPage />} />
         </Route>
 
         {/* ─── Catch-all ─── */}

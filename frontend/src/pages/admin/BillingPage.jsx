@@ -71,6 +71,7 @@ export default function BillingPage() {
         gst: product.gst,
         hsn: product.hsn || "",
         price: product.price,
+        manufacturer: product.manufacturer || "",
         cgst,
         sgst,
         qty: Number(state.qty),
@@ -223,7 +224,7 @@ export default function BillingPage() {
     if (!bill) return;
     const pd = buildPrintData(bill, state.generalSettings);
     const qr = await getQR(pd);
-    const html = buildInvoiceHTML(pd, state.logoSrc, qr);
+    const html = buildInvoiceHTML(pd, state.logoSrc, qr, state.generalSettings?.paperSize);
     const win = window.open("", "_blank");
     win.document.write(html);
     win.document.close();
@@ -235,11 +236,16 @@ export default function BillingPage() {
     if (!bill) return;
     const pd = buildPrintData(bill, state.generalSettings);
     const qr = await getQR(pd);
-    const html = buildInvoiceHTML(pd, state.logoSrc, qr);
+    const html = buildInvoiceHTML(pd, state.logoSrc, qr, state.generalSettings?.paperSize);
     const container = document.createElement('div');
     container.innerHTML = html;
     document.body.appendChild(container);
-    html2pdf().set({ margin: 0, filename: `${bill.invoice}.pdf`, html2canvas: { scale: 2, useCORS: true }, jsPDF: { format: 'a4', orientation: 'portrait' } })
+    html2pdf().set({ 
+      margin: 0, 
+      filename: `${bill.invoice}.pdf`, 
+      html2canvas: { scale: 2, useCORS: true }, 
+      jsPDF: { format: state.generalSettings?.paperSize || 'a4', orientation: 'portrait' } 
+    })
       .from(container).save().then(() => document.body.removeChild(container));
   };
 
