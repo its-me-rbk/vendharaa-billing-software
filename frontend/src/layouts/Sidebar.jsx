@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutGrid, Package, ShoppingCart, DollarSign, Users, Truck, BarChart3,
-  Tag, Settings, LogOut, Leaf, Pill, Clock, X, User
+  Tag, Settings, LogOut, Leaf, Pill, Clock, X, User, BookOpen, RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -19,6 +19,7 @@ const adminNavItems = [
   { section: 'Finance' },
   { title: 'Payments Due', icon: DollarSign, to: '/admin/payments' },
   { title: 'Reports', icon: BarChart3, to: '/admin/reports' },
+  { title: 'Accounts Ledger', icon: BookOpen, to: '/admin/ledger' },
   { section: 'System' },
   { title: 'Sessions', icon: Clock, to: '/admin/sessions' },
   { title: 'User Profile', icon: User, to: '/admin/profile' },
@@ -40,13 +41,22 @@ const superAdminNavItems = [
   { section: 'Management' },
   { title: 'User Management', icon: Users, to: '/superadmin/users' },
   { title: 'Global Settings', icon: Settings, to: '/superadmin/settings' },
+  { title: 'Manage Ledgers', icon: BookOpen, to: '/superadmin/ledger' },
 ];
 
 export default function Sidebar({ variant = 'admin', mobileOpen = false, onClose }) {
   const { user, logout, businessType } = useAuth();
   const { pharmacyName, logoUrl, licenseNumber } = useApp();
 
-  const navItems = variant === 'cashier' ? cashierNavItems : variant === 'superadmin' ? superAdminNavItems : adminNavItems;
+  const baseNavItems = variant === 'cashier' ? cashierNavItems : variant === 'superadmin' ? superAdminNavItems : adminNavItems;
+
+  let navItems = [...baseNavItems];
+  if (variant === 'admin' && businessType === 'pharma') {
+    const offersIndex = navItems.findIndex(item => item.title === 'Offers');
+    if (offersIndex !== -1) {
+      navItems.splice(offersIndex + 1, 0, { title: 'Return Bills', icon: RotateCcw, to: '/admin/returns' });
+    }
+  }
 
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()

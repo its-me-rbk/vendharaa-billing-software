@@ -19,6 +19,27 @@ export default function BillingPage() {
   const isPharma = businessType === 'pharma';
   const state = useBillingState();
   const [showPendingDetails, setShowPendingDetails] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const res = await api.get('/accounts');
+        if (res.data?.success) {
+          const list = res.data.data || [];
+          setAccounts(list);
+          if (list.length > 0) {
+            const defaultAcc = list.find(a => a.name === "Cash") || list[0];
+            setSelectedAccount(defaultAcc);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load accounts in BillingPage", err);
+      }
+    };
+    fetchAccounts();
+  }, []);
 
   // ── Action Handlers ──
 
@@ -181,14 +202,26 @@ export default function BillingPage() {
 
     if (state.paymentType === 'full') {
       payload.paid = true;
-      payload.payments = [{ amount: state.total, method: state.payment, date: Date.now() }];
+      payload.payments = [{ 
+        amount: state.total, 
+        method: state.payment, 
+        accountId: selectedAccount?._id || null,
+        accountName: selectedAccount?.name || 'Cash',
+        date: Date.now() 
+      }];
       payload.balance = 0;
       payload.status = 'Paid';
     } else {
       const paidAmt = Number(state.amountPaid) || 0;
       if (paidAmt < 0 || paidAmt > state.total) return notify('Invalid paid amount', 'error');
       payload.paid = false;
-      payload.payments = [{ amount: paidAmt, method: state.payment, date: Date.now() }];
+      payload.payments = [{ 
+        amount: paidAmt, 
+        method: state.payment, 
+        accountId: selectedAccount?._id || null,
+        accountName: selectedAccount?.name || 'Cash',
+        date: Date.now() 
+      }];
       payload.balance = state.total - paidAmt;
       payload.status = payload.balance === 0 ? 'Paid' : 'Partial';
     }
@@ -697,6 +730,30 @@ export default function BillingPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Target Account Selector */}
+                <div>
+                  <label className="pro-label">Target Account *</label>
+                  <select
+                    className="pro-input"
+                    value={selectedAccount?._id || ''}
+                    onChange={(e) => {
+                      const acc = accounts.find(a => a._id === e.target.value);
+                      setSelectedAccount(acc);
+                      if (acc) {
+                        if (acc.type === 'Cash') state.setPayment('Cash');
+                        else if (acc.type === 'UPI') state.setPayment('UPI');
+                        else if (acc.type === 'Bank') state.setPayment('Card');
+                      }
+                    }}
+                  >
+                    {accounts.map(acc => (
+                      <option key={acc._id} value={acc._id}>
+                        {acc.name} ({acc.type}) - Bal: ₹{acc.balance}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 {/* Payment Method */}
                 <div>

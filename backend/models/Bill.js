@@ -39,6 +39,8 @@ const BillSchema = new mongoose.Schema({
     {
       amount: { type: Number, required: true },
       method: { type: String, default: "Cash" },
+      accountId: { type: mongoose.Schema.Types.ObjectId, ref: "Account", required: false },
+      accountName: { type: String, default: "Cash" },
       date: { type: Date, default: Date.now }
     }
   ],

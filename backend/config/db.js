@@ -49,6 +49,9 @@ const getModels = (connection) => {
   const { supplierSchema } = require("../models/Supplier");
   const { GeneralSettingsSchema } = require("../models/GeneralSettings_model");
   const { LoginSessionSchema } = require("../models/LoginSession");
+  const { LedgerSchema } = require("../models/Ledger");
+  const { AccountSchema } = require("../models/Account");
+  const { ReturnBillSchema } = require("../models/ReturnBill");
 
   return {
     Product: connection.model("Product", productSchema),
@@ -57,6 +60,9 @@ const getModels = (connection) => {
     Supplier: connection.model("Supplier", supplierSchema),
     GeneralSettings: connection.model("GeneralSettings", GeneralSettingsSchema),
     LoginSession: connection.model("LoginSession", LoginSessionSchema),
+    Ledger: connection.model("Ledger", LedgerSchema),
+    Account: connection.model("Account", AccountSchema),
+    ReturnBill: connection.model("ReturnBill", ReturnBillSchema),
   };
 };
 

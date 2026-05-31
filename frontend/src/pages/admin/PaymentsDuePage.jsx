@@ -13,8 +13,24 @@ export default function PaymentsDuePage() {
   const [methods, setMethods] = useState({});
   const [search, setSearch] = useState('');
   const [expandedRows, setExpandedRows] = useState({});
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccountIds, setSelectedAccountIds] = useState({});
 
-  useEffect(() => { fetchBills(); }, []);
+  useEffect(() => {
+    fetchBills();
+    fetchAccounts();
+  }, []);
+
+  const fetchAccounts = async () => {
+    try {
+      const res = await api.get('/accounts');
+      if (res.data?.success) {
+        setAccounts(res.data.data || []);
+      }
+    } catch {
+      setAccounts([]);
+    }
+  };
 
   const fetchBills = async () => {
     setLoading(true);
@@ -27,12 +43,20 @@ export default function PaymentsDuePage() {
 
   const handlePay = async (billId) => {
     const amt = Number(amounts[billId]) || 0;
-    const method = methods[billId] || 'Cash';
     if (amt <= 0) return notify('Enter a valid amount', 'error');
+
+    const defaultAccId = accounts.find(a => a.name === "Cash")?._id || accounts[0]?._id;
+    const accountId = selectedAccountIds[billId] || defaultAccId;
+    const acc = accounts.find(a => a._id === accountId);
 
     setPaymentsSubmitting(prev => ({ ...prev, [billId]: true }));
     try {
-      const res = await api.post(`/bills/${billId}/payments`, { amount: amt, method });
+      const res = await api.post(`/bills/${billId}/payments`, { 
+        amount: amt, 
+        method: acc?.type || 'Cash',
+        accountId: acc?._id || null,
+        accountName: acc?.name || 'Cash'
+      });
       if (res.status >= 200 && res.status < 300) {
         notify('Payment recorded', 'success');
         setAmounts(prev => ({ ...prev, [billId]: '' }));
@@ -194,9 +218,13 @@ export default function PaymentsDuePage() {
                                 value={amounts[b._id] || ''} onChange={(e) => setAmounts(prev => ({ ...prev, [b._id]: e.target.value }))} />
                               <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
                             </div>
-                            <select className="pro-input !py-1.5 !text-xs !w-20"
-                              value={methods[b._id] || 'Cash'} onChange={(e) => setMethods(prev => ({ ...prev, [b._id]: e.target.value }))}>
-                              <option>Cash</option><option>UPI</option><option>Card</option>
+                            <select className="pro-input !py-1.5 !text-xs !w-36"
+                              value={selectedAccountIds[b._id] || (accounts.find(a => a.name === "Cash")?._id || (accounts[0]?._id || ''))}
+                              onChange={(e) => setSelectedAccountIds(prev => ({ ...prev, [b._id]: e.target.value }))}
+                            >
+                              {accounts.map(a => (
+                                <option key={a._id} value={a._id}>{a.name} ({a.type})</option>
+                              ))}
                             </select>
                             <button onClick={() => handlePay(b._id)} disabled={paymentsSubmitting[b._id]}
                               className="btn-primary !py-1.5 !px-3 !text-[10px] uppercase font-black">

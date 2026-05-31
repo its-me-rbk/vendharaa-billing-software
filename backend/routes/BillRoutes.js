@@ -29,7 +29,7 @@ async function recalcCustomerTotals(customerId, models) {
 
 // CREATE BILL + DEDUCT STOCK
 router.post("/", async (req, res, next) => {
-  const { Bill, Product } = req.models;
+  const { Bill, Product, Ledger, Account } = req.models;
   const businessType = req.user.businessType;
 
   try {
@@ -64,6 +64,11 @@ router.post("/", async (req, res, next) => {
       await product.save();
     }
 
+    // Lookup Cash fallback account just in case
+    const cashAccount = await Account.findOne({ name: "Cash", businessType });
+    const defaultAccountId = cashAccount ? cashAccount._id : null;
+    const defaultAccountName = cashAccount ? cashAccount.name : "Cash";
+
     // Attach businessType and metadata
     const incoming = { 
       ...req.body, 
@@ -80,12 +85,20 @@ router.post("/", async (req, res, next) => {
       ? incoming.payments.map((p) => ({
           amount: Number(p.amount) || 0,
           method: p.method || incoming.paymentMethod || "Cash",
+          accountId: p.accountId || defaultAccountId,
+          accountName: p.accountName || defaultAccountName,
           date: p.date || Date.now(),
         }))
       : [];
 
     if ((incoming.paid === true || incoming.paid === "true") && payments.length === 0) {
-      payments = [{ amount: totalAmount, method: incoming.paymentMethod || "Cash", date: Date.now() }];
+      payments = [{ 
+        amount: totalAmount, 
+        method: incoming.paymentMethod || "Cash", 
+        accountId: incoming.accountId || defaultAccountId,
+        accountName: incoming.accountName || defaultAccountName,
+        date: Date.now() 
+      }];
     }
 
     const paidSum = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
@@ -99,6 +112,32 @@ router.post("/", async (req, res, next) => {
     incoming.status = status;
 
     const bill = await Bill.create(incoming);
+
+    // Auto-record ledger entries for each payment
+    try {
+      if (Array.isArray(payments) && payments.length > 0) {
+        for (const p of payments) {
+          if (p.amount > 0) {
+            await Ledger.create({
+              date: p.date || new Date(),
+              description: `Payment for Invoice #${bill.invoice}`,
+              type: "credit",
+              amount: Number(p.amount) || 0,
+              category: "Sales",
+              paymentMethod: p.method || "Cash",
+              partyName: bill.customerName || "Walk-in Customer",
+              referenceId: bill._id,
+              referenceType: "Bill",
+              accountId: p.accountId || defaultAccountId,
+              accountName: p.accountName || defaultAccountName,
+              businessType,
+            });
+          }
+        }
+      }
+    } catch (ledgerErr) {
+      console.error("Failed to automatically record ledger entries on bill create:", ledgerErr);
+    }
 
     try {
       const customerId = req.body.customerId || req.body.customer_id || null;
@@ -128,7 +167,7 @@ router.get("/due", async (req, res) => {
 
 // ADD PAYMENT TO A BILL
 router.post("/:id/payments", async (req, res, next) => {
-  const { Bill } = req.models;
+  const { Bill, Ledger, Account } = req.models;
   try {
     const bill = await Bill.findById(req.params.id);
     if (!bill) return res.status(404).json({ error: "Bill not found" });
@@ -137,8 +176,24 @@ router.post("/:id/payments", async (req, res, next) => {
     const method = req.body.method || bill.paymentMethod || "Cash";
     if (amount <= 0) return res.status(400).json({ error: "Invalid payment amount" });
 
+    // Lookup fallback Cash account if not provided
+    let accountId = req.body.accountId;
+    let accountName = req.body.accountName;
+
+    if (!accountId) {
+      const cashAccount = await Account.findOne({ name: "Cash", businessType: bill.businessType });
+      accountId = cashAccount ? cashAccount._id : null;
+      accountName = cashAccount ? cashAccount.name : "Cash";
+    }
+
     bill.payments = bill.payments || [];
-    bill.payments.push({ amount, method, date: req.body.date || Date.now() });
+    bill.payments.push({ 
+      amount, 
+      method, 
+      accountId,
+      accountName,
+      date: req.body.date || Date.now() 
+    });
 
     const paidSum = bill.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
     bill.balance = Math.max(0, (Number(bill.total) || 0) - paidSum);
@@ -146,6 +201,26 @@ router.post("/:id/payments", async (req, res, next) => {
     bill.status = bill.paid ? "Paid" : paidSum > 0 ? "Partial" : "Unpaid";
 
     await bill.save();
+
+    // Auto-record ledger entry for this payment
+    try {
+      await Ledger.create({
+        date: req.body.date || new Date(),
+        description: `Subsequent Payment for Invoice #${bill.invoice}`,
+        type: "credit",
+        amount,
+        category: "Customer Payment",
+        paymentMethod: method,
+        partyName: bill.customerName || "Walk-in Customer",
+        referenceId: bill._id,
+        referenceType: "Bill",
+        accountId,
+        accountName,
+        businessType: bill.businessType,
+      });
+    } catch (ledgerErr) {
+      console.error("Failed to automatically record ledger entry on subsequent payment:", ledgerErr);
+    }
 
     try {
       if (bill.paid && bill.customerId) await recalcCustomerTotals(bill.customerId, req.models);
@@ -183,7 +258,7 @@ router.get("/:id", async (req, res) => {
 
 // DELETE BILL + RESTORE STOCK
 router.delete("/:id", async (req, res, next) => {
-  const { Bill, Product } = req.models;
+  const { Bill, Product, Ledger } = req.models;
   const businessType = req.user.businessType;
 
   try {
@@ -212,6 +287,13 @@ router.delete("/:id", async (req, res, next) => {
     }
 
     await Bill.findByIdAndDelete(req.params.id);
+
+    // Auto-clean ledger entries for this bill
+    try {
+      await Ledger.deleteMany({ referenceId: bill._id, referenceType: "Bill" });
+    } catch (ledgerErr) {
+      console.error("Failed to automatically clean up ledger entries on bill delete:", ledgerErr);
+    }
 
     try {
       const customerId = bill.customerId || null;

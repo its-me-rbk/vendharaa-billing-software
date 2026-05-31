@@ -23,9 +23,13 @@ router.get("/summary", async (req, res) => {
     const agroModels = getModels(connections.agro);
     const pharmaModels = getModels(connections.pharma);
 
-    const [agroBills, pharmaBills] = await Promise.all([
+    const [agroBills, pharmaBills, agroLedger, pharmaLedger, agroAccounts, pharmaAccounts] = await Promise.all([
       agroModels.Bill.find(),
-      pharmaModels.Bill.find()
+      pharmaModels.Bill.find(),
+      agroModels.Ledger.find(),
+      pharmaModels.Ledger.find(),
+      agroModels.Account.find(),
+      pharmaModels.Account.find()
     ]);
 
     const agroRevenue = agroBills.reduce((acc, b) => acc + (b.total || 0), 0);
@@ -33,6 +37,56 @@ router.get("/summary", async (req, res) => {
 
     const agroSold = agroBills.reduce((acc, b) => acc + b.items.reduce((sum, i) => sum + (i.qty || 0), 0), 0);
     const pharmaSold = pharmaBills.reduce((acc, b) => acc + b.items.reduce((sum, i) => sum + (i.qty || 0), 0), 0);
+
+    // Calculate Agro Ledger Inflow/Outflow
+    let agroCredits = 0, agroDebits = 0;
+    agroLedger.forEach(l => {
+      if (l.type === "credit") agroCredits += l.amount;
+      else if (l.type === "debit") agroDebits += l.amount;
+    });
+    const agroNet = agroCredits - agroDebits;
+
+    // Calculate Pharma Ledger Inflow/Outflow
+    let pharmaCredits = 0, pharmaDebits = 0;
+    pharmaLedger.forEach(l => {
+      if (l.type === "credit") pharmaCredits += l.amount;
+      else if (l.type === "debit") pharmaDebits += l.amount;
+    });
+    const pharmaNet = pharmaCredits - pharmaDebits;
+
+    // Dynamically calculate Agro account balances
+    const agroAccountBalances = agroAccounts.map(acc => {
+      let credits = 0, debits = 0;
+      agroLedger.forEach(l => {
+        if (l.accountId && String(l.accountId) === String(acc._id)) {
+          if (l.type === "credit") credits += l.amount;
+          else if (l.type === "debit") debits += l.amount;
+        }
+      });
+      return {
+        _id: acc._id,
+        name: acc.name,
+        type: acc.type,
+        balance: Number((acc.initialBalance + credits - debits).toFixed(2))
+      };
+    });
+
+    // Dynamically calculate Pharma account balances
+    const pharmaAccountBalances = pharmaAccounts.map(acc => {
+      let credits = 0, debits = 0;
+      pharmaLedger.forEach(l => {
+        if (l.accountId && String(l.accountId) === String(acc._id)) {
+          if (l.type === "credit") credits += l.amount;
+          else if (l.type === "debit") debits += l.amount;
+        }
+      });
+      return {
+        _id: acc._id,
+        name: acc.name,
+        type: acc.type,
+        balance: Number((acc.initialBalance + credits - debits).toFixed(2))
+      };
+    });
 
     res.json({
       success: true,
@@ -43,7 +97,20 @@ router.get("/summary", async (req, res) => {
         totalBills: agroBills.length + pharmaBills.length,
         totalItemsSold: agroSold + pharmaSold,
         agroBillsCount: agroBills.length,
-        pharmaBillsCount: pharmaBills.length
+        pharmaBillsCount: pharmaBills.length,
+        ledgerInsights: {
+          agroCredits,
+          agroDebits,
+          agroNet,
+          pharmaCredits,
+          pharmaDebits,
+          pharmaNet,
+          totalCredits: agroCredits + pharmaCredits,
+          totalDebits: agroDebits + pharmaDebits,
+          totalNet: agroNet + pharmaNet,
+          agroAccounts: agroAccountBalances,
+          pharmaAccounts: pharmaAccountBalances
+        }
       }
     });
   } catch (error) {

@@ -145,7 +145,18 @@ export default function ProductsPage() {
                             <span className="text-[10px] text-slate-400">{p.manufacturer || 'No Manufacturer'}</span>
                           </div>
                         </td>
-                        <td><span className="badge badge-gray">{p.category || 'General'}</span></td>
+                        <td>
+                          <span className="badge badge-gray">{p.category || 'General'}</span>
+                          {p.category === 'Returned Products' && p.returnReason && (
+                            <span className={`badge ${
+                              p.returnReason === 'Expired' ? 'badge-purple' :
+                              p.returnReason === 'Near Expiry' ? 'badge-orange' :
+                              p.returnReason === 'Defective' ? 'badge-red' : 'badge-blue'
+                            }`} style={{ marginLeft: '6px' }}>
+                              Reason: {p.returnReason}
+                            </span>
+                          )}
+                        </td>
                         <td className="text-right font-bold">₹{(p.price || 0).toLocaleString()}</td>
                         <td className="text-center">
                           <span className={`font-bold text-sm ${(p.quantity || 0) <= 0 ? 'text-red-600' : (p.quantity || 0) < 10 ? 'text-orange-600' : 'text-emerald-600'}`}>

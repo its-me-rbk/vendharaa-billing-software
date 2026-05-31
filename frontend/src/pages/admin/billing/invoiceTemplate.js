@@ -100,7 +100,11 @@ export function buildPrintData(bill, generalSettings) {
 }
 
 export function buildInvoiceHTML(pd, logoSrc, qrUrl, paperSize = 'a4') {
-  const itemRows = pd.items.map((item, idx) => `
+  const itemsCount = pd.items.length;
+  const targetRows = itemsCount <= 15 ? 15 : Math.ceil(itemsCount / 15) * 15;
+  const dummyRowCount = targetRows - itemsCount;
+
+  let itemRows = pd.items.map((item, idx) => `
     <tr>
       <td class="sno">${String(idx + 1).padStart(2, '0')}</td>
       <td class="mfr">${item.manufacturer}</td>
@@ -117,11 +121,27 @@ export function buildInvoiceHTML(pd, logoSrc, qrUrl, paperSize = 'a4') {
     </tr>
   `).join('');
 
-  // Calculate dynamic zoom based on item count to prevent second page.
-  // Made more aggressive to ensure no overlap on standard A4 printers.
-  const itemCount = pd.items.length;
-  const printZoom = itemCount > 8 ? Math.max(0.50, 1 - ((itemCount - 8) * 0.04)).toFixed(2) : 1;
-  const printMinHeight = Math.round(1122 / printZoom);
+  for (let i = 0; i < dummyRowCount; i++) {
+    itemRows += `
+      <tr class="dummy-row">
+        <td class="sno">&nbsp;</td>
+        <td class="mfr">&nbsp;</td>
+        <td class="desc center-nil">${i === 0 ? '<span class="nil-text">NO MORE ITEMS</span>' : '&nbsp;'}</td>
+        <td class="center">&nbsp;</td>
+        <td class="center">&nbsp;</td>
+        <td class="center">&nbsp;</td>
+        <td class="center">&nbsp;</td>
+        <td class="center">&nbsp;</td>
+        <td class="center">&nbsp;</td>
+        <td class="right">&nbsp;</td>
+        <td class="center">&nbsp;</td>
+        <td class="total">&nbsp;</td>
+      </tr>
+    `;
+  }
+
+  const printZoom = 1;
+  const printMinHeight = 1122;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -229,17 +249,40 @@ export function buildInvoiceHTML(pd, logoSrc, qrUrl, paperSize = 'a4') {
   .sig-for { font-size: 11px; font-weight: 600; color: var(--ink-mid); text-align: center; margin-bottom: 4px; }
   .sig-block.center { align-items: center; }
 
+  table.items tbody tr {
+    height: 30px;
+  }
+  table.items tbody tr.dummy-row {
+    height: 30px;
+    background-image: linear-gradient(172deg, transparent 49.5%, #E5E7EB 49.5%, #E5E7EB 50.5%, transparent 50.5%);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+  }
+  .center-nil {
+    text-align: center !important;
+  }
+  .nil-text {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink-faint);
+    background: #fff;
+    padding: 0 8px;
+    letter-spacing: 0.1em;
+  }
+
   @media print {
-    @page { size: A4; margin: 4mm; }
+    @page { size: ${paperSize ? paperSize.toUpperCase() : 'A4'}; margin: 5mm; }
     body { background: #fff; margin: 0; }
     .page { 
-      width: 100%; 
-      min-height: ${printMinHeight}px;
-      margin: 0; 
-      padding: 0; 
-      box-shadow: none; 
-      border-radius: 0;
-      zoom: ${printZoom};
+      width: 100% !important; 
+      max-width: 100% !important;
+      min-height: 0 !important;
+      height: auto !important;
+      margin: 0 !important; 
+      padding: 24px 28px !important; 
+      box-shadow: none !important; 
+      border-radius: 0 !important;
+      zoom: ${paperSize === 'a3' ? '1.05' : '0.74'} !important;
     }
     .page::before, .page::after { display: none; }
     table.items tbody tr, .bottom-section, .personnel-section, .signature-section { page-break-inside: avoid; }

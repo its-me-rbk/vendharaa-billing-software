@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, TrendingUp, Users, ShoppingCart, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
+import { LayoutGrid, TrendingUp, Users, ShoppingCart, ArrowUpRight, ArrowDownRight, Activity, Wallet } from 'lucide-react';
 import superAdminService from '../../services/superAdminService';
 import PageHeader from '../../components/common/PageHeader';
 import StatCard from '../../components/common/StatCard';
@@ -73,6 +73,40 @@ export default function SuperDashboard() {
           />
         </div>
 
+        {/* Dynamic Cash Ledger Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard 
+            label="Consolidated Inflow (Credits)" 
+            value={`₹${(summary?.ledgerInsights?.totalCredits || 0).toLocaleString()}`} 
+            icon={ArrowUpRight} 
+            iconBg="bg-emerald-50"
+            iconColor="text-emerald-600"
+          />
+          <StatCard 
+            label="Consolidated Outflow (Debits)" 
+            value={`₹${(summary?.ledgerInsights?.totalDebits || 0).toLocaleString()}`} 
+            icon={ArrowDownRight} 
+            iconBg="bg-rose-50"
+            iconColor="text-rose-600"
+          />
+          <StatCard 
+            label="Agro Ledger Net Position" 
+            value={`₹${(summary?.ledgerInsights?.agroNet || 0).toLocaleString()}`} 
+            icon={Wallet} 
+            iconBg="bg-green-50"
+            iconColor="text-green-700"
+            extra={<span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Active Cash surplus</span>}
+          />
+          <StatCard 
+            label="Pharma Ledger Net Position" 
+            value={`₹${(summary?.ledgerInsights?.pharmaNet || 0).toLocaleString()}`} 
+            icon={Wallet} 
+            iconBg="bg-blue-50"
+            iconColor="text-blue-700"
+            extra={<span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Active Cash surplus</span>}
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Revenue Distribution */}
           <div className="card-pro" style={{ padding: 24 }}>
@@ -125,6 +159,41 @@ export default function SuperDashboard() {
                 color="#334155" 
                 count={summary?.pharmaBillsCount}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Accounts Asset Allocations */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Agro Accounts */}
+          <div className="card-pro" style={{ padding: 24 }}>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Agro Store Accounts Allocation</h3>
+            <div className="space-y-3">
+              {summary?.ledgerInsights?.agroAccounts?.map(acc => (
+                <div key={acc._id} className="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
+                  <span className="font-bold text-slate-800 text-xs">{acc.name} ({acc.type})</span>
+                  <span className="font-extrabold text-slate-900 text-xs">₹{acc.balance.toLocaleString()}</span>
+                </div>
+              ))}
+              {(!summary?.ledgerInsights?.agroAccounts || summary.ledgerInsights.agroAccounts.length === 0) && (
+                <p className="text-xs text-slate-400 italic">No Agro accounts found.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Pharma Accounts */}
+          <div className="card-pro" style={{ padding: 24 }}>
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Pharma Care Accounts Allocation</h3>
+            <div className="space-y-3">
+              {summary?.ledgerInsights?.pharmaAccounts?.map(acc => (
+                <div key={acc._id} className="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
+                  <span className="font-bold text-slate-800 text-xs">{acc.name} ({acc.type})</span>
+                  <span className="font-extrabold text-slate-900 text-xs">₹{acc.balance.toLocaleString()}</span>
+                </div>
+              ))}
+              {(!summary?.ledgerInsights?.pharmaAccounts || summary.ledgerInsights.pharmaAccounts.length === 0) && (
+                <p className="text-xs text-slate-400 italic">No Pharma accounts found.</p>
+              )}
             </div>
           </div>
         </div>

@@ -28,6 +28,7 @@ const productSchema = new mongoose.Schema(
     // Pharma Specific
     batches: [batchSchema],
     archivedBatches: [archivedBatchSchema],
+    returnReason: { type: String, default: "" },
 
     offers: [
       {
