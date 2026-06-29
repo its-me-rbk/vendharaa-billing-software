@@ -9,18 +9,7 @@ const { getConnection, getModels } = require("../config/db");
 const router = express.Router();
 
 // multer for logo upload
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    const dir = "uploads/settings";
-    try {
-      fs.mkdirSync(dir, { recursive: true });
-    } catch (e) {}
-    cb(null, dir);
-  },
-  filename(req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 /**
@@ -35,7 +24,7 @@ router.post("/save", auth, dbSelector, upload.single("logo"), async (req, res, n
     }
 
     if (req.file) {
-      payload.logo = `${req.protocol}://${req.get("host")}/${req.file.path.replace(/\\/g, "/")}`;
+      payload.logo = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
     }
 
     if (payload.removeLogo === "true" || payload.removeLogo === true) {

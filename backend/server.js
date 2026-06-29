@@ -14,8 +14,6 @@ app.use(cors());
 app.use(express.json());
 const activityLogger = require("./middleware/logger");
 app.use(activityLogger);
-// Serve uploaded files (logos, settings, etc.)
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* Database */
 connectDB().then(async () => {
