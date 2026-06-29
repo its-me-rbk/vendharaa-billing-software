@@ -28,13 +28,13 @@ const UserSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["admin", "cashier"],
+      enum: ["superadmin", "admin", "cashier"],
       required: true,
     },
 
     businessType: {
       type: String,
-      enum: ["agro", "pharma"],
+      enum: ["agro", "pharma", "master"],
       required: true,
       default: "agro",
     },
@@ -47,6 +47,11 @@ const UserSchema = new mongoose.Schema(
     activeToken: {
       type: String,
       default: null,
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
   },
   { timestamps: true }

@@ -1,0 +1,26 @@
+services:
+  server:
+    build: ./backend
+    container_name: billing-server
+    ports:
+      - "1007:1007"
+    env_file:
+      - ./backend/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /home/rubhak/app-data/vendharaa-billing/logs:/app/logs
+    restart: always
+
+  client:
+    build:
+      context: ./frontend
+    container_name: billing-client
+    ports:
+      - "1008:80"
+    depends_on:
+      - server
+    restart: always
+
+volumes:
+  billing-logs:

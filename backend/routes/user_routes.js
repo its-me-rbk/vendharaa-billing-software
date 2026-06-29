@@ -12,15 +12,7 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 /* ================= MULTER CONFIG ================= */
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, "uploads/users");
-  },
-  filename(req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 /* ================= ADD USER ================= */
@@ -59,7 +51,7 @@ router.post("/add", upload.single("logo"), async (req, res) => {
       role,
       businessType,
       logo: req.file
-        ? `${req.protocol}://${req.get("host")}/${req.file.path.replace(/\\/g, "/")}`
+        ? `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`
         : null,
     });
 
@@ -99,6 +91,13 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
+      });
+    }
+
+    if (user.status === "inactive") {
+      return res.status(403).json({
+        success: false,
+        message: "Account is inactive. Please contact administrator.",
       });
     }
 
@@ -215,7 +214,11 @@ router.post("/logout", auth, dbSelector, async (req, res) => {
 /* ================= GET ALL USERS ================= */
 router.get("/", auth, async (req, res) => {
   try {
-    const users = await User.find().select("-password -activeToken");
+    const filter = {};
+    if (req.user.role !== "superadmin") {
+      filter.businessType = req.user.businessType;
+    }
+    const users = await User.find(filter).select("-password -activeToken");
     res.status(200).json({
       success: true,
       users,
@@ -283,7 +286,7 @@ router.put("/:id", auth, upload.single("logo"), async (req, res) => {
 
     // If a new file is uploaded, set it. If client requests removal, clear the logo.
     if (req.file) {
-      user.logo = `${req.protocol}://${req.get("host")}/${req.file.path.replace(/\\/g, "/")}`;
+      user.logo = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
     } else if (req.body && req.body.removeLogo && req.body.removeLogo === "true") {
       user.logo = null;
     }

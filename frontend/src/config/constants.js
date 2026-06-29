@@ -30,6 +30,7 @@ export const PHARMA_CATEGORIES = [
   'Supplements',
   'Medical Equipment',
   'Surgicals',
+  'Returned Products',
   'Other',
 ];
 

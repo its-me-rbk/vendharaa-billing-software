@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutGrid, Package, ShoppingCart, DollarSign, Users, Truck, BarChart3,
-  Tag, Settings, LogOut, Leaf, Pill, Clock, X,
+  Tag, Settings, LogOut, Leaf, Pill, Clock, X, User, BookOpen, RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -19,9 +19,10 @@ const adminNavItems = [
   { section: 'Finance' },
   { title: 'Payments Due', icon: DollarSign, to: '/admin/payments' },
   { title: 'Reports', icon: BarChart3, to: '/admin/reports' },
+  { title: 'Accounts Ledger', icon: BookOpen, to: '/admin/ledger' },
   { section: 'System' },
   { title: 'Sessions', icon: Clock, to: '/admin/sessions' },
-  { title: 'Settings', icon: Settings, to: '/admin/settings' },
+  { title: 'User Profile', icon: User, to: '/admin/profile' },
 ];
 
 const cashierNavItems = [
@@ -29,19 +30,39 @@ const cashierNavItems = [
   { title: 'Dashboard', icon: LayoutGrid, to: '/cashier' },
   { title: 'Billing', icon: ShoppingCart, to: '/cashier/billing' },
   { title: 'Payments Due', icon: DollarSign, to: '/cashier/payments' },
+  { section: 'System' },
+  { title: 'User Profile', icon: User, to: '/cashier/profile' },
+];
+
+const superAdminNavItems = [
+  { section: 'Global Overview' },
+  { title: 'Consolidated Dashboard', icon: LayoutGrid, to: '/superadmin' },
+  { title: 'Activity Logs', icon: Clock, to: '/superadmin/logs' },
+  { section: 'Management' },
+  { title: 'User Management', icon: Users, to: '/superadmin/users' },
+  { title: 'Global Settings', icon: Settings, to: '/superadmin/settings' },
+  { title: 'Manage Ledgers', icon: BookOpen, to: '/superadmin/ledger' },
 ];
 
 export default function Sidebar({ variant = 'admin', mobileOpen = false, onClose }) {
   const { user, logout, businessType } = useAuth();
   const { pharmacyName, logoUrl, licenseNumber } = useApp();
 
-  const navItems = variant === 'cashier' ? cashierNavItems : adminNavItems;
+  const baseNavItems = variant === 'cashier' ? cashierNavItems : variant === 'superadmin' ? superAdminNavItems : adminNavItems;
+
+  let navItems = [...baseNavItems];
+  if (variant === 'admin' && businessType === 'pharma') {
+    const offersIndex = navItems.findIndex(item => item.title === 'Offers');
+    if (offersIndex !== -1) {
+      navItems.splice(offersIndex + 1, 0, { title: 'Return Bills', icon: RotateCcw, to: '/admin/returns' });
+    }
+  }
 
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-    : variant === 'cashier' ? 'CS' : 'AD';
+    : variant === 'cashier' ? 'CS' : variant === 'superadmin' ? 'SA' : 'AD';
 
-  const basePath = variant === 'cashier' ? '/cashier' : '/admin';
+  const basePath = variant === 'cashier' ? '/cashier' : variant === 'superadmin' ? '/superadmin' : '/admin';
 
   return (
     <aside className={`pro-sidebar ${mobileOpen ? 'mobile-open' : ''}`}>

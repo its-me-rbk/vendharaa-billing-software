@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 const LoginSessionSchema = new mongoose.Schema(
   {
-    businessType: { type: String, enum: ["agro", "pharma"], required: true, default: "agro" },
+    businessType: { type: String, enum: ["agro", "pharma", "master"], required: true, default: "agro" },
     email: {
       type: String,
       required: true,
@@ -15,7 +15,7 @@ const LoginSessionSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["admin", "cashier"], // ✅ FIXED
+      enum: ["superadmin", "admin", "cashier"],
       required: true,
     },
 

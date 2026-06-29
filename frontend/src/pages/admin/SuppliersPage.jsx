@@ -5,6 +5,7 @@ import notify from '../../components/ui/notify';
 import PageHeader from '../../components/common/PageHeader';
 import StatCard from '../../components/common/StatCard';
 import EmptyState from '../../components/common/EmptyState';
+import ConfirmModal from '../../components/common/ConfirmModal';
 
 function SupplierFormModal({ supplier, onClose, onSaved }) {
   const isEdit = !!supplier;
@@ -80,6 +81,7 @@ export default function SuppliersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState({ open: false, supplier: null });
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, supplier: null });
 
   useEffect(() => { fetchSuppliers(); }, []);
 
@@ -90,9 +92,15 @@ export default function SuppliersPage() {
     setLoading(false);
   };
 
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete "${name}"?`)) return;
-    try { await api.delete(`/suppliers/${id}`); notify('Supplier removed', 'success'); fetchSuppliers(); }
+  const handleDelete = async () => {
+    const supplier = confirmDelete.supplier;
+    if (!supplier) return;
+    try { 
+      await api.delete(`/suppliers/${supplier._id}`); 
+      notify('Supplier removed', 'success'); 
+      setConfirmDelete({ open: false, supplier: null });
+      fetchSuppliers(); 
+    }
     catch { notify('Failed to delete', 'error'); }
   };
 
@@ -123,13 +131,23 @@ export default function SuppliersPage() {
                 <td className="text-slate-600">{s.company || '—'}</td>
                 <td><div className="flex flex-col gap-0.5">{s.phone && <span className="text-xs text-slate-600 flex items-center gap-1"><Phone size={10} /> {s.phone}</span>}{s.email && <span className="text-xs text-slate-400 flex items-center gap-1"><Mail size={10} /> {s.email}</span>}{!s.phone && !s.email && <span className="text-xs text-slate-300 italic">No contact</span>}</div></td>
                 <td>{s.gst ? <span className="font-mono text-xs">{s.gst}</span> : <span className="text-xs text-slate-300 italic">N/A</span>}</td>
-                <td className="text-center"><div className="flex items-center justify-center gap-1"><button onClick={() => setModal({ open: true, supplier: s })} className="action-btn edit"><Edit size={14} /></button><button onClick={() => handleDelete(s._id, s.name)} className="action-btn delete"><Trash2 size={14} /></button></div></td>
+                <td className="text-center"><div className="flex items-center justify-center gap-1"><button onClick={() => setModal({ open: true, supplier: s })} className="action-btn edit"><Edit size={14} /></button><button onClick={() => setConfirmDelete({ open: true, supplier: s })} className="action-btn delete"><Trash2 size={14} /></button></div></td>
               </tr>))}
             </tbody></table></div>
           )}
         </div>
       </div>
       {modal.open && <SupplierFormModal supplier={modal.supplier} onClose={() => setModal({ open: false, supplier: null })} onSaved={() => { setModal({ open: false, supplier: null }); fetchSuppliers(); }} />}
+      
+      <ConfirmModal 
+        open={confirmDelete.open}
+        title="Remove Supplier"
+        message={`Are you sure you want to remove ${confirmDelete.supplier?.name}? This will delete their vendor profile.`}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete({ open: false, supplier: null })}
+        confirmText="Remove Supplier"
+        variant="danger"
+      />
     </div>
   );
 }

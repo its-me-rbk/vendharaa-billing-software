@@ -8,6 +8,8 @@ import EmptyState from '../../components/common/EmptyState';
 import AddProductForm from './AddProductForm';
 import { useAuth } from '../../context/AuthContext';
 
+import ConfirmModal from '../../components/common/ConfirmModal';
+
 export default function ProductsPage() {
   const { businessType } = useAuth();
   const isPharma = businessType === 'pharma';
@@ -18,6 +20,7 @@ export default function ProductsPage() {
   const [editProduct, setEditProduct] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, product: null });
 
   useEffect(() => { fetchProducts(); }, []);
 
@@ -30,11 +33,13 @@ export default function ProductsPage() {
     setLoading(false);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
+  const handleDelete = async () => {
+    const product = confirmDelete.product;
+    if (!product) return;
     try {
-      await api.delete(`/products/${id}`);
+      await api.delete(`/products/${product._id}`);
       notify('Product deleted', 'success');
+      setConfirmDelete({ open: false, product: null });
       fetchProducts();
     } catch { notify('Failed to delete product', 'error'); }
   };
@@ -140,7 +145,18 @@ export default function ProductsPage() {
                             <span className="text-[10px] text-slate-400">{p.manufacturer || 'No Manufacturer'}</span>
                           </div>
                         </td>
-                        <td><span className="badge badge-gray">{p.category || 'General'}</span></td>
+                        <td>
+                          <span className="badge badge-gray">{p.category || 'General'}</span>
+                          {p.category === 'Returned Products' && p.returnReason && (
+                            <span className={`badge ${
+                              p.returnReason === 'Expired' ? 'badge-purple' :
+                              p.returnReason === 'Near Expiry' ? 'badge-orange' :
+                              p.returnReason === 'Defective' ? 'badge-red' : 'badge-blue'
+                            }`} style={{ marginLeft: '6px' }}>
+                              Reason: {p.returnReason}
+                            </span>
+                          )}
+                        </td>
                         <td className="text-right font-bold">₹{(p.price || 0).toLocaleString()}</td>
                         <td className="text-center">
                           <span className={`font-bold text-sm ${(p.quantity || 0) <= 0 ? 'text-red-600' : (p.quantity || 0) < 10 ? 'text-orange-600' : 'text-emerald-600'}`}>
@@ -153,14 +169,14 @@ export default function ProductsPage() {
                               onClick={() => setExpandedId(expandedId === p._id ? null : p._id)}
                               className="text-[11px] font-bold text-accent hover:underline"
                             >
-                              {p.batches?.length || 0} Batches {expandedId === p._id ? '▲' : '▼'}
+                              {p.batches?.length || 0} Active / {p.archivedBatches?.length || 0} Archived {expandedId === p._id ? '▲' : '▼'}
                             </button>
                           </td>
                         )}
                         <td className="text-center">
                           <div className="flex items-center justify-center gap-1">
                             <button onClick={() => { setEditProduct(p); setShowAddForm(true); }} className="action-btn edit"><Edit size={14} /></button>
-                            <button onClick={() => handleDelete(p._id)} className="action-btn delete"><Trash2 size={14} /></button>
+                            <button onClick={() => setConfirmDelete({ open: true, product: p })} className="action-btn delete"><Trash2 size={14} /></button>
                           </div>
                         </td>
                       </tr>
@@ -168,26 +184,89 @@ export default function ProductsPage() {
                         <tr>
                           <td colSpan={6} className="!p-0 bg-slate-50/50">
                             <div className="px-6 py-4 border-b border-slate-200">
-                               <div className="grid grid-cols-3 gap-4">
-                                  {p.batches?.map((b, bi) => {
-                                    const isExpired = b.expiryDate && new Date(b.expiryDate) < new Date();
-                                    return (
-                                      <div key={bi} className={`p-3 rounded-lg border ${isExpired ? 'bg-red-50 border-red-100' : 'bg-white border-slate-200'}`}>
-                                        <div className="flex justify-between items-start mb-1">
-                                           <span className="text-xs font-bold text-slate-700">Batch: {b.batchNumber}</span>
-                                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isExpired ? 'bg-red-200 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                                              {b.quantity} left
-                                           </span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                                          <Calendar size={10} />
-                                          Expiry: {b.expiryDate ? new Date(b.expiryDate).toLocaleDateString() : 'None'}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
+                               <div className="flex items-center justify-between mb-4">
+                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Batch Management</h4>
                                </div>
-                               {(!p.batches || p.batches.length === 0) && <p className="text-xs text-slate-400 italic">No batches found for this medicine</p>}
+                               
+                               {/* Active Batches */}
+                               <div className="mb-6">
+                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Active Batches
+                                 </p>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                    {p.batches?.map((b, bi) => {
+                                      const isExpired = b.expiryDate && new Date(b.expiryDate) < new Date();
+                                      return (
+                                        <div key={bi} className={`p-4 rounded-xl border group hover:shadow-md transition-all ${isExpired ? 'bg-red-50 border-red-100' : 'bg-white border-slate-100'}`}>
+                                          <div className="flex justify-between items-start mb-2">
+                                             <div>
+                                               <span className="text-sm font-black text-slate-800 block">{b.batchNumber}</span>
+                                               <span className={`text-[9px] font-black px-2 py-0.5 rounded-full mt-1 inline-block ${isExpired ? 'bg-red-200 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                  {b.quantity} in stock
+                                               </span>
+                                             </div>
+                                             <button 
+                                               onClick={async () => {
+                                                 try {
+                                                   await api.post(`/products/${p._id}/batches/${b._id}/archive`);
+                                                   notify('Batch archived', 'success');
+                                                   fetchProducts();
+                                                 } catch { notify('Failed to archive', 'error'); }
+                                               }}
+                                               className="text-[10px] font-black text-slate-400 hover:text-orange-600 uppercase tracking-tighter transition-colors"
+                                             >
+                                               Archive
+                                             </button>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+                                            <Calendar size={12} className={isExpired ? 'text-red-400' : 'text-slate-400'} />
+                                            Expiry: {b.expiryDate ? new Date(b.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'None'}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                    {(!p.batches || p.batches.length === 0) && <p className="text-xs text-slate-400 italic py-2">No active batches available</p>}
+                                 </div>
+                               </div>
+
+                               {/* Archived Batches */}
+                               {p.archivedBatches?.length > 0 && (
+                                 <div>
+                                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                     <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> Archived Batches
+                                   </p>
+                                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-75">
+                                      {p.archivedBatches.map((b, bi) => (
+                                        <div key={bi} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 group hover:opacity-100 transition-all">
+                                          <div className="flex justify-between items-start mb-2">
+                                             <div>
+                                               <span className="text-sm font-black text-slate-400 block">{b.batchNumber}</span>
+                                               <span className="text-[9px] font-black px-2 py-0.5 rounded-full mt-1 inline-block bg-slate-200 text-slate-500">
+                                                  {b.quantity} archived
+                                               </span>
+                                             </div>
+                                             <button 
+                                               onClick={async () => {
+                                                 try {
+                                                   await api.post(`/products/${p._id}/archived-batches/${b._id}/restore`);
+                                                   notify('Batch restored', 'success');
+                                                   fetchProducts();
+                                                 } catch { notify('Failed to restore', 'error'); }
+                                               }}
+                                               className="text-[10px] font-black text-accent hover:text-accent-dark uppercase tracking-tighter"
+                                             >
+                                               Restore
+                                             </button>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
+                                            <Calendar size={12} />
+                                            Archived: {b.archivedAt ? new Date(b.archivedAt).toLocaleDateString('en-IN') : 'Unknown'}
+                                          </div>
+                                        </div>
+                                      ))}
+                                   </div>
+                                 </div>
+                               )}
                             </div>
                           </td>
                         </tr>
@@ -208,6 +287,16 @@ export default function ProductsPage() {
           onSaved={() => { setShowAddForm(false); setEditProduct(null); fetchProducts(); }}
         />
       )}
+
+      <ConfirmModal 
+        open={confirmDelete.open}
+        title="Delete Product"
+        message={`Are you sure you want to delete ${confirmDelete.product?.name}? This action will remove the product and all its batch data.`}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete({ open: false, product: null })}
+        confirmText="Delete Product"
+        variant="danger"
+      />
     </div>
   );
 }

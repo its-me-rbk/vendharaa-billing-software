@@ -3,7 +3,8 @@ import { Save, Upload, Trash2, Clock, Building2 } from 'lucide-react';
 import api from '../../../services/api';
 import notify from '../../../components/ui/notify';
 
-export default function GeneralSettings() {
+export default function GeneralSettings({ businessType }) {
+  const isPharma = businessType === 'pharma';
   const [form, setForm] = useState({
     pharmacyName: '', licenseNumber: '', gstNumber: '',
     address: '', phone: '', email: '',
@@ -17,7 +18,8 @@ export default function GeneralSettings() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.get('/general-settings/get');
+        const headers = businessType ? { 'x-business-type': businessType } : {};
+        const res = await api.get('/general-settings/get', { headers });
         if (res.data?.success && res.data.data) {
           setForm(prev => ({ ...prev, ...res.data.data }));
           if (res.data.data.logo) setLogoPreview(res.data.data.logo);
@@ -34,7 +36,9 @@ export default function GeneralSettings() {
       Object.entries(form).forEach(([k, v]) => fd.append(k, v || ''));
       if (logoFile) fd.append('logo', logoFile);
       if (removeLogo) fd.append('removeLogo', 'true');
-      await api.post('/general-settings/save', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const headers = { 'Content-Type': 'multipart/form-data' };
+      if (businessType) headers['x-business-type'] = businessType;
+      await api.post('/general-settings/save', fd, { headers });
       notify('Settings saved', 'success');
     } catch { notify('Failed to save', 'error'); }
     setSaving(false);
@@ -46,7 +50,7 @@ export default function GeneralSettings() {
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="card-pro" style={{ padding: 24 }}>
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-          <Building2 size={20} className="text-emerald-600" />
+          <Building2 size={20} className={isPharma ? "text-blue-600" : "text-emerald-600"} />
           <div>
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Business Information</h2>
             <p className="text-[11px] text-slate-500">Core details used on invoices and documents</p>
@@ -108,7 +112,7 @@ export default function GeneralSettings() {
 
       <div className="card-pro" style={{ padding: 24 }}>
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-          <Clock size={20} className="text-emerald-600" />
+          <Clock size={20} className={isPharma ? "text-blue-600" : "text-emerald-600"} />
           <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Business Hours</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

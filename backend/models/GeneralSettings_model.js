@@ -45,6 +45,22 @@ const GeneralSettingsSchema = new mongoose.Schema(
       type: Number,
       default: 30,
     },
+    paperSize: {
+      type: String,
+      default: "a4",
+    },
+    showLogo: {
+      type: Boolean,
+      default: true,
+    },
+    printGST: {
+      type: Boolean,
+      default: true,
+    },
+    autoPrint: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
