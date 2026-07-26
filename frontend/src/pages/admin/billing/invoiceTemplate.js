@@ -100,11 +100,7 @@ export function buildPrintData(bill, generalSettings) {
 }
 
 export function buildInvoiceHTML(pd, logoSrc, qrUrl, paperSize = 'a4') {
-  const itemsCount = pd.items.length;
-  const targetRows = itemsCount <= 15 ? 15 : Math.ceil(itemsCount / 15) * 15;
-  const dummyRowCount = targetRows - itemsCount;
-
-  let itemRows = pd.items.map((item, idx) => `
+  const itemRows = pd.items.map((item, idx) => `
     <tr>
       <td class="sno">${String(idx + 1).padStart(2, '0')}</td>
       <td class="mfr">${item.manufacturer}</td>
@@ -120,25 +116,6 @@ export function buildInvoiceHTML(pd, logoSrc, qrUrl, paperSize = 'a4') {
       <td class="total">₹${item.total}</td>
     </tr>
   `).join('');
-
-  for (let i = 0; i < dummyRowCount; i++) {
-    itemRows += `
-      <tr class="dummy-row">
-        <td class="sno">&nbsp;</td>
-        <td class="mfr">&nbsp;</td>
-        <td class="desc center-nil">${i === 0 ? '<span class="nil-text">NO MORE ITEMS</span>' : '&nbsp;'}</td>
-        <td class="center">&nbsp;</td>
-        <td class="center">&nbsp;</td>
-        <td class="center">&nbsp;</td>
-        <td class="center">&nbsp;</td>
-        <td class="center">&nbsp;</td>
-        <td class="center">&nbsp;</td>
-        <td class="right">&nbsp;</td>
-        <td class="center">&nbsp;</td>
-        <td class="total">&nbsp;</td>
-      </tr>
-    `;
-  }
 
   const printZoom = 1;
   const printMinHeight = 1122;
@@ -276,7 +253,7 @@ export function buildInvoiceHTML(pd, logoSrc, qrUrl, paperSize = 'a4') {
     .page { 
       width: 100% !important; 
       max-width: 100% !important;
-      min-height: 0 !important;
+      min-height: ${paperSize === 'a3' ? '390mm' : paperSize === 'legal' ? '467mm' : '388mm'} !important;
       height: auto !important;
       margin: 0 !important; 
       padding: 24px 28px !important; 

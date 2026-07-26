@@ -58,16 +58,10 @@ export function buildReturnPrintData(returnBill, generalSettings) {
 }
 
 export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
-  const returnedCount = pd.returnedItems.length;
-  const replacementCount = pd.replacementItems.length;
-  const totalItems = returnedCount + replacementCount;
-  const targetRows = totalItems <= 15 ? 15 : Math.ceil(totalItems / 15) * 15;
-  const dummyRowCount = targetRows - totalItems;
-
   const showReplacementSection = pd.replacementItems.length > 0;
   const grandTotal = Math.max(pd.refundAmount, pd.extraCharged);
 
-  let returnRows = pd.returnedItems.map((item, idx) => `
+  const returnRows = pd.returnedItems.map((item, idx) => `
     <tr>
       <td class="sno">${String(idx + 1).padStart(2, '0')}</td>
       <td class="desc">${item.name}</td>
@@ -81,25 +75,7 @@ export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
     </tr>
   `).join('');
 
-  if (!showReplacementSection) {
-    for (let i = 0; i < dummyRowCount; i++) {
-      returnRows += `
-        <tr class="dummy-row">
-          <td class="sno">&nbsp;</td>
-          <td class="desc center-nil">${i === 0 ? '<span class="nil-text">NO MORE ITEMS</span>' : '&nbsp;'}</td>
-          <td class="center">&nbsp;</td>
-          <td class="center">&nbsp;</td>
-          <td class="center">&nbsp;</td>
-          <td class="right">&nbsp;</td>
-          <td class="center">&nbsp;</td>
-          <td class="center">&nbsp;</td>
-          <td class="total">&nbsp;</td>
-        </tr>
-      `;
-    }
-  }
-
-  let replacementRows = pd.replacementItems.map((item, idx) => `
+  const replacementRows = pd.replacementItems.map((item, idx) => `
     <tr>
       <td class="sno">${String(idx + 1).padStart(2, '0')}</td>
       <td class="desc">${item.name}</td>
@@ -111,23 +87,6 @@ export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
       <td class="total">₹${item.total}</td>
     </tr>
   `).join('');
-
-  if (showReplacementSection) {
-    for (let i = 0; i < dummyRowCount; i++) {
-      replacementRows += `
-        <tr class="dummy-row">
-          <td class="sno">&nbsp;</td>
-          <td class="desc center-nil">${i === 0 ? '<span class="nil-text">NO MORE ITEMS</span>' : '&nbsp;'}</td>
-          <td class="center">&nbsp;</td>
-          <td class="center">&nbsp;</td>
-          <td class="center">&nbsp;</td>
-          <td class="right">&nbsp;</td>
-          <td class="center">&nbsp;</td>
-          <td class="total">&nbsp;</td>
-        </tr>
-      `;
-    }
-  }
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -260,7 +219,7 @@ export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
     .page { 
       width: 100% !important; 
       max-width: 100% !important;
-      min-height: 0 !important;
+      min-height: ${paperSize === 'a3' ? '390mm' : paperSize === 'legal' ? '467mm' : '388mm'} !important;
       height: auto !important;
       margin: 0 !important; 
       padding: 24px 28px !important; 
