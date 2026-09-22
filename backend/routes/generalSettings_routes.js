@@ -32,9 +32,43 @@ router.post("/save", auth, dbSelector, upload.single("logo"), async (req, res, n
     }
     if (Object.prototype.hasOwnProperty.call(payload, "removeLogo")) delete payload.removeLogo;
 
+    // Strip internal/immutable fields
+    delete payload._id;
+    delete payload.__v;
+    delete payload.createdAt;
+    delete payload.updatedAt;
+
+    // Sanitize boolean fields (convert strings or remove empty strings)
+    const booleanFields = ["sessionTimeoutEnabled", "showLogo", "printGST", "autoPrint"];
+    booleanFields.forEach((field) => {
+      if (payload[field] !== undefined) {
+        if (payload[field] === "true" || payload[field] === true || payload[field] === 1 || payload[field] === "1") {
+          payload[field] = true;
+        } else if (payload[field] === "false" || payload[field] === false || payload[field] === 0 || payload[field] === "0") {
+          payload[field] = false;
+        } else if (payload[field] === "" || payload[field] === null) {
+          delete payload[field];
+        }
+      }
+    });
+
+    // Sanitize number fields
+    if (payload.sessionTimeoutMinutes !== undefined) {
+      if (payload.sessionTimeoutMinutes === "" || payload.sessionTimeoutMinutes === null) {
+        delete payload.sessionTimeoutMinutes;
+      } else {
+        const parsed = Number(payload.sessionTimeoutMinutes);
+        if (!isNaN(parsed)) {
+          payload.sessionTimeoutMinutes = parsed;
+        } else {
+          delete payload.sessionTimeoutMinutes;
+        }
+      }
+    }
+
     let settings = await GeneralSettings.findOne();
     if (settings) {
-      settings = await GeneralSettings.findByIdAndUpdate(settings._id, payload, { new: true });
+      settings = await GeneralSettings.findByIdAndUpdate(settings._id, payload, { new: true, runValidators: true });
     } else {
       payload.businessType = req.user.businessType;
       settings = await GeneralSettings.create(payload);

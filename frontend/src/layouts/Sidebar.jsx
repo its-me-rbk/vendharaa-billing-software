@@ -2,10 +2,13 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutGrid, Package, ShoppingCart, DollarSign, Users, Truck, BarChart3,
-  Tag, Settings, LogOut, Leaf, Pill, Clock, X, User, BookOpen, RotateCcw
+  Tag, Settings, LogOut, Clock, X, User, BookOpen, RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
+import greenLogo from '../assets/green_logo.png';
+import blueLogo from '../assets/blue_logo.png';
+import redLogo from '../assets/red_logo.png';
 
 const adminNavItems = [
   { section: 'Main' },
@@ -68,16 +71,22 @@ export default function Sidebar({ variant = 'admin', mobileOpen = false, onClose
     <aside className={`pro-sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
       {/* Brand */}
       <NavLink to={basePath} className="sidebar-brand" style={{ textDecoration: 'none' }} onClick={onClose}>
-        <div className="brand-icon">
-          {logoUrl ? (
-            <img src={logoUrl} alt="logo" style={{ width: 22, height: 22, objectFit: 'contain', borderRadius: 4 }} />
+        <div className="brand-icon" style={{ background: '#fff', boxShadow: '0 2px 6px rgba(0,0,0,0.15)', border: 'none' }}>
+          {variant === 'superadmin' ? (
+            <img src={redLogo} alt="logo" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+          ) : logoUrl ? (
+            <img src={logoUrl} alt="logo" style={{ width: 24, height: 24, objectFit: 'contain', borderRadius: 4 }} />
           ) : (
-            businessType === 'pharma' ? <Pill size={18} color="#fff" /> : <Leaf size={18} color="#fff" />
+            <img src={businessType === 'pharma' ? blueLogo : greenLogo} alt="logo" style={{ width: 24, height: 24, objectFit: 'contain' }} />
           )}
         </div>
         <div>
-          <div className="brand-name">{pharmacyName || (businessType === 'pharma' ? 'PharmaMart' : 'AgroMart')}</div>
-          <div className="brand-tagline">{licenseNumber || (variant === 'cashier' ? 'Cashier Station' : 'Admin Panel')}</div>
+          <div className="brand-name">
+            {variant === 'superadmin' ? 'Vendharaa Enterprise' : (pharmacyName || (businessType === 'pharma' ? 'PharmaMart' : 'AgroMart'))}
+          </div>
+          <div className="brand-tagline">
+            {variant === 'superadmin' ? 'SuperAdmin Console' : (licenseNumber || (variant === 'cashier' ? 'Cashier Station' : 'Admin Panel'))}
+          </div>
         </div>
         <button type="button" className="mobile-sidebar-close" onClick={onClose} aria-label="Close menu">
           <X size={16} />

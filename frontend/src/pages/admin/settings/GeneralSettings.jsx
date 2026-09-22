@@ -21,19 +21,33 @@ export default function GeneralSettings({ businessType }) {
         const headers = businessType ? { 'x-business-type': businessType } : {};
         const res = await api.get('/general-settings/get', { headers });
         if (res.data?.success && res.data.data) {
-          setForm(prev => ({ ...prev, ...res.data.data }));
+          const d = res.data.data;
+          setForm({
+            pharmacyName: d.pharmacyName || '',
+            licenseNumber: d.licenseNumber || '',
+            gstNumber: d.gstNumber || '',
+            address: d.address || '',
+            phone: d.phone || '',
+            email: d.email || '',
+            openingTime: d.openingTime || '',
+            closingTime: d.closingTime || '',
+          });
           if (res.data.data.logo) setLogoPreview(res.data.data.logo);
         }
       } catch (err) { console.error('Load settings:', err); }
     })();
-  }, []);
+  }, [businessType]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v || ''));
+      Object.entries(form).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) {
+          fd.append(k, v);
+        }
+      });
       if (logoFile) fd.append('logo', logoFile);
       if (removeLogo) fd.append('removeLogo', 'true');
       const headers = { 'Content-Type': 'multipart/form-data' };

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, Lock, Mail, AlertCircle, ArrowRight, Shield } from 'lucide-react';
+import { Lock, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
+import redLogo from '../../assets/red_logo.png';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ export default function LoginPage() {
           }}>
             {logoUrl
               ? <img src={logoUrl} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />
-              : <Shield size={24} color="#fff" />
+              : <img src={redLogo} alt="" style={{ width: 35, height: 35, objectFit: 'contain' }} />
             }
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', margin: 0 }}>
@@ -150,7 +151,7 @@ export default function LoginPage() {
           borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: 28, border: '1px solid rgba(255,255,255,0.1)',
         }}>
-          <LayoutGrid size={36} color="#94a3b8" />
+          <img src={redLogo} alt="" style={{ width: 48, height: 48, objectFit: 'contain' }} />
         </div>
         <h2 style={{ fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-1px', lineHeight: 1.2, marginBottom: 16 }}>
           Unified Business<br />Operations
