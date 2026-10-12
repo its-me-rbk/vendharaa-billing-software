@@ -73,10 +73,10 @@ export function buildPrintData(bill, generalSettings) {
     payment: { 
       method: bill.paymentMethod || "Cash", 
       status: bill.paid ? "Paid" : (bill.status || "Pending"),
-      bankName: generalSettings?.bankName || 'Indian Bank',
-      branchName: generalSettings?.branchName || 'Harur Branch',
-      accountNumber: generalSettings?.accountNumber || '6021234678',
-      ifsc: generalSettings?.ifsc || 'IDIB000012',
+      bankName: generalSettings?.bankName || 'Ujjivan Small Finance Bank',
+      branchName: generalSettings?.branchName || 'Krishnagiri',
+      accountNumber: generalSettings?.accountNumber || '1130120250000479',
+      ifsc: generalSettings?.ifsc || 'UJVN0001130',
     },
     formatted: { 
       subtotal: grandSub.toLocaleString('en-IN',{minimumFractionDigits:2}), 
@@ -89,12 +89,12 @@ export function buildPrintData(bill, generalSettings) {
       autoPrint: !!generalSettings?.autoPrint
     },
     bank: { 
-      accountHolder: generalSettings?.accountHolder||"Farm Business", 
-      accountNumber: generalSettings?.accountNumber||'6021234678', 
-      ifsc: generalSettings?.ifsc||'IDIB000012', 
+      accountHolder: generalSettings?.accountHolder || "Vendharaa", 
+      accountNumber: generalSettings?.accountNumber || '1130120250000479', 
+      ifsc: generalSettings?.ifsc || 'UJVN0001130', 
       accountType: "Current", 
-      bankName: generalSettings?.bankName||'Indian Bank', 
-      upi: generalSettings?.upiId||"greendwarftech@uboi" 
+      bankName: generalSettings?.bankName || 'Ujjivan Small Finance Bank', 
+      upi: generalSettings?.upiId || "greendwarftech@uboi" 
     }
   };
 }

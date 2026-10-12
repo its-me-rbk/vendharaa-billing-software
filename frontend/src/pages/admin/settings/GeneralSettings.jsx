@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Save, Upload, Trash2, Clock, Building2 } from 'lucide-react';
+import { Save, Upload, Trash2, Clock, Building2, Landmark } from 'lucide-react';
 import api from '../../../services/api';
 import notify from '../../../components/ui/notify';
 
@@ -9,6 +9,12 @@ export default function GeneralSettings({ businessType }) {
     pharmacyName: '', licenseNumber: '', gstNumber: '',
     address: '', phone: '', email: '',
     openingTime: '', closingTime: '',
+    bankName: 'Ujjivan Small Finance Bank',
+    branchName: 'Krishnagiri',
+    accountNumber: '1130120250000479',
+    ifsc: 'UJVN0001130',
+    accountHolder: '',
+    upiId: '',
   });
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
@@ -31,6 +37,12 @@ export default function GeneralSettings({ businessType }) {
             email: d.email || '',
             openingTime: d.openingTime || '',
             closingTime: d.closingTime || '',
+            bankName: d.bankName || 'Ujjivan Small Finance Bank',
+            branchName: d.branchName || 'Krishnagiri',
+            accountNumber: d.accountNumber || '1130120250000479',
+            ifsc: d.ifsc || 'UJVN0001130',
+            accountHolder: d.accountHolder || '',
+            upiId: d.upiId || '',
           });
           if (res.data.data.logo) setLogoPreview(res.data.data.logo);
         }
@@ -61,8 +73,8 @@ export default function GeneralSettings({ businessType }) {
   const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
   return (
-    <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="card-pro" style={{ padding: 24 }}>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="card-pro" style={{ padding: 24 }}>
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
           <Building2 size={20} className={isPharma ? "text-blue-600" : "text-emerald-600"} />
           <div>
@@ -118,22 +130,94 @@ export default function GeneralSettings({ businessType }) {
             <div><label className="pro-label">Email</label><input value={form.email} onChange={e => update('email', e.target.value)} className="pro-input" type="email" /></div>
           </div>
         </div>
+      </div>
 
-        <div className="pt-6 mt-6 border-t border-slate-100 flex justify-end">
-          <button type="submit" disabled={saving} className="btn-primary"><Save size={15} /> {saving ? 'Saving…' : 'Update Information'}</button>
+      <div className="card-pro" style={{ padding: 24 }}>
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+          <Landmark size={20} className={isPharma ? "text-blue-600" : "text-emerald-600"} />
+          <div>
+            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Bank & Payment Details</h2>
+            <p className="text-[11px] text-slate-500">Bank credentials printed on invoices and payment receipts</p>
+          </div>
         </div>
-      </form>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="pro-label">Bank Account Number</label>
+            <input
+              value={form.accountNumber}
+              onChange={e => update('accountNumber', e.target.value)}
+              className="pro-input font-mono"
+              placeholder="1130120250000479"
+            />
+          </div>
+          <div>
+            <label className="pro-label">IFSC Code</label>
+            <input
+              value={form.ifsc}
+              onChange={e => update('ifsc', e.target.value.toUpperCase())}
+              className="pro-input font-mono uppercase"
+              placeholder="UJVN0001130"
+            />
+          </div>
+          <div>
+            <label className="pro-label">Bank Name</label>
+            <input
+              value={form.bankName}
+              onChange={e => update('bankName', e.target.value)}
+              className="pro-input"
+              placeholder="e.g. Ujjivan Small Finance Bank"
+            />
+          </div>
+          <div>
+            <label className="pro-label">Branch Name</label>
+            <input
+              value={form.branchName}
+              onChange={e => update('branchName', e.target.value)}
+              className="pro-input"
+              placeholder="e.g. Krishnagiri"
+            />
+          </div>
+          <div>
+            <label className="pro-label">Account Holder Name</label>
+            <input
+              value={form.accountHolder}
+              onChange={e => update('accountHolder', e.target.value)}
+              className="pro-input"
+              placeholder="e.g. Vendharaa"
+            />
+          </div>
+          <div>
+            <label className="pro-label">UPI ID</label>
+            <input
+              value={form.upiId}
+              onChange={e => update('upiId', e.target.value)}
+              className="pro-input font-mono"
+              placeholder="e.g. username@bank"
+            />
+          </div>
+        </div>
+      </div>
 
       <div className="card-pro" style={{ padding: 24 }}>
         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
           <Clock size={20} className={isPharma ? "text-blue-600" : "text-emerald-600"} />
-          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Business Hours</h2>
+          <div>
+            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Business Hours</h2>
+            <p className="text-[11px] text-slate-500">Operating hours displayed to customers and staff</p>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div><label className="pro-label">Opening Time</label><input type="time" value={form.openingTime} onChange={e => update('openingTime', e.target.value)} className="pro-input" /></div>
           <div><label className="pro-label">Closing Time</label><input type="time" value={form.closingTime} onChange={e => update('closingTime', e.target.value)} className="pro-input" /></div>
         </div>
       </div>
-    </div>
+
+      <div className="flex justify-end pt-2">
+        <button type="submit" disabled={saving} className="btn-primary">
+          <Save size={15} /> {saving ? 'Saving…' : 'Save Settings'}
+        </button>
+      </div>
+    </form>
   );
 }

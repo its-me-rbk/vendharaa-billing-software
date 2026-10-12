@@ -34,6 +34,34 @@ const GeneralSettingsSchema = new mongoose.Schema(
     closingTime: {
       type: String, // HH:mm
     },
+    bankName: {
+      type: String,
+      trim: true,
+      default: "Ujjivan Small Finance Bank",
+    },
+    branchName: {
+      type: String,
+      trim: true,
+      default: "Krishnagiri",
+    },
+    accountNumber: {
+      type: String,
+      trim: true,
+      default: "1130120250000479",
+    },
+    ifsc: {
+      type: String,
+      trim: true,
+      default: "UJVN0001130",
+    },
+    accountHolder: {
+      type: String,
+      trim: true,
+    },
+    upiId: {
+      type: String,
+      trim: true,
+    },
     logo: {
       type: String,
     },

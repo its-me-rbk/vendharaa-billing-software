@@ -65,14 +65,22 @@ async function seed() {
     licenseNumber: "AGRO/2024/001", 
     businessType: "agro", 
     phone: "+91 9876543210",
-    address: "Gandhi Nagar, Dharmapuri, Tamil Nadu - 636701"
+    address: "Gandhi Nagar, Dharmapuri, Tamil Nadu - 636701",
+    bankName: "Ujjivan Small Finance Bank",
+    branchName: "Krishnagiri",
+    accountNumber: "1130120250000479",
+    ifsc: "UJVN0001130"
   });
   await PharmaSettings.create({ 
     pharmacyName: "Vendharaa Pharma Care", 
     licenseNumber: "PHAR/2024/002", 
     businessType: "pharma", 
     phone: "+91 8877665544",
-    address: "Medical College Road, Salem, Tamil Nadu - 636030"
+    address: "Medical College Road, Salem, Tamil Nadu - 636030",
+    bankName: "Ujjivan Small Finance Bank",
+    branchName: "Krishnagiri",
+    accountNumber: "1130120250000479",
+    ifsc: "UJVN0001130"
   });
 
   // ─── SEED AGRO DATA ──────────────────────────────────────────────────────
