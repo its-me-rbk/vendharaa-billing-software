@@ -12,7 +12,7 @@ router.use(dbSelector);
  */
 router.post("/", async (req, res, next) => {
   try {
-    const { name, category, manufacturer, quantity, price, gst, hsn, barcode, batches } = req.body;
+    const { name, category, manufacturer, quantity, price, ptr, mrp, gst, hsn, barcode, batches, offers } = req.body;
     const { Product } = req.models;
 
     if (!name) return res.status(400).json({ success: false, message: "Name required" });
@@ -20,12 +20,17 @@ router.post("/", async (req, res, next) => {
     let existing = await Product.findOne({ name });
     if (existing) return res.status(409).json({ success: false, message: "Product already exists" });
 
+    const ptrVal = Number(ptr ?? price) || 0;
+    const mrpVal = Number(mrp) || 0;
+
     const productData = {
       name,
       category,
       manufacturer,
       quantity: Number(quantity) || 0,
-      price: Number(price) || 0,
+      price: ptrVal,
+      ptr: ptrVal,
+      mrp: mrpVal,
       gst: Number(gst) || 0,
       hsn: hsn || "",
       barcode: barcode || "",
@@ -34,6 +39,12 @@ router.post("/", async (req, res, next) => {
 
     if (req.user.businessType === 'pharma' && batches) {
       productData.batches = batches;
+    }
+
+    if (Array.isArray(offers)) {
+      productData.offers = offers
+        .filter(o => Number(o.buyQty) > 0 && Number(o.freeQty) > 0)
+        .map(o => ({ buyQty: Number(o.buyQty), freeQty: Number(o.freeQty) }));
     }
 
     const product = await Product.create(productData);

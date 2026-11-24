@@ -17,6 +17,9 @@ const BillSchema = new mongoose.Schema({
       batchNumber: String,  // REQUIRED for batch deduction
       expiryDate: Date,
       price: Number,
+      ptr: Number,
+      mrp: Number,
+      manufacturer: String,
       qty: Number,
       freeQty: { type: Number, default: 0 },
       gst: Number,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Truck, Plus, Search, Edit, Trash2, Phone, Mail, X, Save, Building2 } from 'lucide-react';
+import { Truck, Plus, Search, Edit, Trash2, Phone, Mail, X, Save, Building2, RotateCcw } from 'lucide-react';
 import api from '../../services/api';
 import notify from '../../components/ui/notify';
 import PageHeader from '../../components/common/PageHeader';
@@ -7,15 +7,37 @@ import StatCard from '../../components/common/StatCard';
 import EmptyState from '../../components/common/EmptyState';
 import ConfirmModal from '../../components/common/ConfirmModal';
 
+const SUPPLIER_DRAFT_KEY = 'draft_supplier_form';
+const EMPTY_SUPPLIER_FORM = { name: '', company: '', phone: '', email: '', address: '', gst: '' };
+
 function SupplierFormModal({ supplier, onClose, onSaved }) {
   const isEdit = !!supplier;
-  const [form, setForm] = useState({ name: '', company: '', phone: '', email: '', address: '', gst: '' });
+  const [form, setForm] = useState(() => {
+    if (supplier) return EMPTY_SUPPLIER_FORM;
+    try {
+      const saved = JSON.parse(localStorage.getItem(SUPPLIER_DRAFT_KEY) || 'null');
+      return saved ? { ...EMPTY_SUPPLIER_FORM, ...saved } : EMPTY_SUPPLIER_FORM;
+    } catch {
+      return EMPTY_SUPPLIER_FORM;
+    }
+  });
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (supplier) setForm({ name: supplier.name||'', company: supplier.company||'', phone: supplier.phone||'', email: supplier.email||'', address: supplier.address||'', gst: supplier.gst||'' });
   }, [supplier]);
+
+  useEffect(() => {
+    if (isEdit) return;
+    try { localStorage.setItem(SUPPLIER_DRAFT_KEY, JSON.stringify(form)); } catch { /* ignore */ }
+  }, [form, isEdit]);
+
+  const handleClear = () => {
+    setForm(EMPTY_SUPPLIER_FORM);
+    setErrors({});
+    try { localStorage.removeItem(SUPPLIER_DRAFT_KEY); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape') onClose(); };
@@ -37,7 +59,7 @@ function SupplierFormModal({ supplier, onClose, onSaved }) {
     try {
       const p = { name: form.name.trim(), company: form.company.trim(), phone: form.phone.trim(), email: form.email.trim(), address: form.address.trim(), gst: form.gst.trim() };
       if (isEdit) { await api.put(`/suppliers/${supplier._id}`, p); notify('Supplier updated', 'success'); }
-      else { await api.post('/suppliers', p); notify('Supplier added', 'success'); }
+      else { await api.post('/suppliers', p); try { localStorage.removeItem(SUPPLIER_DRAFT_KEY); } catch { /* ignore */ } notify('Supplier added', 'success'); }
       onSaved();
     } catch (err) { notify(err.response?.data?.message || 'Failed to save', 'error'); }
     finally { setSubmitting(false); }
@@ -66,9 +88,18 @@ function SupplierFormModal({ supplier, onClose, onSaved }) {
             <div><label className="pro-label">Address</label><textarea value={form.address} onChange={e => set('address', e.target.value)} className="pro-input resize-none" rows={2} placeholder="Street, City, State" /></div>
             <div><label className="pro-label">GST Number</label><input value={form.gst} onChange={e => set('gst', e.target.value)} className="pro-input font-mono" placeholder="22AAAAA0000A1Z5" /></div>
           </div>
-          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/30">
-            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-            <button type="submit" disabled={submitting} className="btn-primary"><Save size={15} /> {submitting ? 'Saving…' : isEdit ? 'Update' : 'Add Supplier'}</button>
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/30">
+            <div>
+              {!isEdit && (
+                <button type="button" onClick={handleClear} className="btn-secondary !text-xs">
+                  <RotateCcw size={14} /> Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3">
+              <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+              <button type="submit" disabled={submitting} className="btn-primary"><Save size={15} /> {submitting ? 'Saving…' : isEdit ? 'Update' : 'Add Supplier'}</button>
+            </div>
           </div>
         </form>
       </div>

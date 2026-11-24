@@ -1,4 +1,4 @@
-import { numberToWords } from './invoiceTemplate';
+import { numberToWords, getSignatorySrc } from './invoiceTemplate';
 
 export function buildReturnPrintData(returnBill, generalSettings) {
   const returnedItems = (returnBill.returnedItems || []).map(item => {
@@ -123,25 +123,26 @@ export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
     --shadow-md:  0 4px 12px rgba(0,0,0,.09);
   }
   body { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink); background: #E8ECF4; line-height: 1.45; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .page { width: 860px; min-height: 1122px; margin: 32px auto; background: #FFFFFF; border-radius: 12px; box-shadow: var(--shadow-md); padding: 36px 40px 40px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .page { width: 860px; min-height: 1122px; margin: 32px auto; background: #FFFFFF; border-radius: 12px; box-shadow: var(--shadow-md); padding: 16px 40px 28px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
   .page::before, .page::after { content: ''; position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
   .page::before { width: 420px; height: 420px; background: radial-gradient(circle, rgba(230,126,34,.045) 0%, transparent 70%); right: -100px; bottom: 220px; }
   .page::after { width: 300px; height: 300px; background: radial-gradient(circle, rgba(230,126,34,.04) 0%, transparent 70%); left: -60px; bottom: 120px; }
   .page > * { position: relative; z-index: 1; }
   .processed-stamp { position: absolute; top: 0; right: 0; width: 100px; height: 100px; overflow: hidden; z-index: 10; }
   .processed-stamp span { position: absolute; top: 22px; right: -22px; background: #E67E22; color: #fff; font-size: 8px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 28px; transform: rotate(45deg); transform-origin: center center; white-space: nowrap; }
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 24px; }
-  .company-block h1 { font-size: 28px; font-weight: 700; color: var(--navy); letter-spacing: -0.3px; margin-bottom: 10px; }
-  .company-meta { display: flex; flex-direction: column; gap: 4px; }
-  .meta-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-mid); }
-  .meta-row svg { flex-shrink: 0; color: var(--ink-light); }
-  .invoice-box { background: var(--header-bg); border-radius: 8px; padding: 14px 20px 16px; text-align: right; min-width: 240px; border: 1px solid #F5E3D2; flex-shrink: 0; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 24px; }
+  .company-block h1 { font-size: 28px; font-weight: 700; color: var(--navy); letter-spacing: -0.3px; margin-bottom: 0; }
+  .company-meta { display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+  .meta-row { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; color: var(--ink-mid); }
+  .meta-row svg { flex-shrink: 0; color: var(--ink-light); margin-top: 2px; }
+  .invoice-box { background: var(--header-bg); border-radius: 8px; padding: 12px 16px; text-align: left; border: 1px solid #F5E3D2; flex-shrink: 0; display: flex; flex-direction: row; align-items: center; gap: 14px; margin-right: 18px; }
+  .invoice-box .inv-col-sep { border-left: 1px solid #F5E3D2; padding-left: 14px; }
   .invoice-box .label-sm { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 3px; }
-  .invoice-box .invoice-num { font-size: 16px; font-weight: 700; color: var(--navy); letter-spacing: -0.3px; margin-bottom: 8px; }
+  .invoice-box .invoice-num { font-size: 15px; font-weight: 700; color: var(--navy); letter-spacing: -0.3px; margin-bottom: 0; }
   .invoice-box .bill-date { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 0; }
-  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
-  .bill-section { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 26px; }
-  .bill-card { background: var(--card-bg); border-radius: 8px; padding: 14px 18px; min-width: 300px; border: 1px solid #F5EAE0; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0 12px; }
+  .bill-section { display: grid; grid-template-columns: 60fr 40fr; align-items: stretch; gap: 28px; margin-bottom: 14px; }
+  .bill-card { background: var(--card-bg); border-radius: 8px; padding: 12px 16px; border: 1px solid #F5EAE0; }
   .bill-card .label-sm { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 5px; }
   .bill-card .company-name { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
   .bill-card .bill-addr { font-size: 12px; color: var(--ink-mid); line-height: 1.6; }
@@ -167,30 +168,29 @@ export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
   .badge-red { background: #fee2e2; color: #dc2626; }
   .badge-orange { background: #ffedd5; color: #ea580c; }
   .badge-blue { background: #dbeafe; color: #1d4ed8; }
-  .bottom-section { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 24px; margin-bottom: 28px; align-items: start; margin-top: auto; }
-  .section-title { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 10px; }
-  .payment-box { background: #fff; border: 1px solid var(--border-mid); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
-  .payment-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
+  .bottom-section { display: grid; grid-template-columns: 1fr 1.15fr; gap: 20px; margin-bottom: 16px; align-items: start; margin-top: auto; }
+  .section-title { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 6px; }
+  .payment-box { background: #fff; border: 1px solid var(--border-mid); border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
+  .payment-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11.5px; border-bottom: 1px solid var(--border); }
   .payment-row:last-child { border-bottom: none; }
   .payment-row .pk { color: var(--ink-light); }
   .payment-row .pv { font-weight: 700; color: var(--ink); }
-  .payment-notes { font-size: 10px; color: var(--ink-faint); line-height: 1.6; margin-top: 8px; }
-  .tax-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
-  .tax-row:last-child { border-bottom: none; font-weight: 700; font-size: 14px; color: var(--ink); padding-top: 10px; }
+  .payment-notes { font-size: 10px; color: var(--ink-faint); line-height: 1.4; margin-top: 4px; }
+  .tax-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
+  .tax-row:last-child { border-bottom: none; font-weight: 700; font-size: 13px; color: var(--ink); padding-top: 6px; }
   .tax-row:last-child .tv { color: var(--navy); }
   .tax-row .tk { color: var(--ink-mid); }
   .tax-row .tv { font-weight: 500; color: var(--ink); }
-  .grand-total-box { background: var(--panel-bg); border-radius: 10px; padding: 20px 18px; color: var(--panel-text); }
-  .grand-total-box .gt-label { font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 5px; }
-  .grand-total-box .gt-value { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -0.5px; line-height: 1.1; margin-bottom: 14px; }
-  .grand-total-box .words-label { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.50); margin-bottom: 5px; }
-  .grand-total-box .words-text { font-size: 12.5px; color: rgba(255,255,255,0.85); line-height: 1.55; }
-  .signature-section { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: flex-end; padding-top: 24px; gap: 20px; }
-  .sig-block { display: flex; flex-direction: column; gap: 4px; }
-  .sig-line { border-top: 1px solid var(--border-mid); margin-bottom: 4px; }
-  .sig-label { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-light); }
-  .sig-for { font-size: 11px; font-weight: 600; color: var(--ink-mid); text-align: center; margin-bottom: 4px; }
-  .sig-block.center { align-items: center; }
+  .grand-total-box { background: var(--panel-bg); border-radius: 10px; padding: 14px 16px; color: var(--panel-text); }
+  .grand-total-box .gt-label { font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 3px; }
+  .grand-total-box .gt-value { font-size: 24px; font-weight: 700; color: #fff; letter-spacing: -0.5px; line-height: 1.1; margin-bottom: 8px; }
+  .grand-total-box .words-label { font-size: 8.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.50); margin-bottom: 2px; }
+  .grand-total-box .words-text { font-size: 11.5px; color: rgba(255,255,255,0.85); line-height: 1.4; }
+  .signature-section { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 16px; padding-top: 8px; align-items: stretch; }
+  .sig-box { border: 1px solid var(--border-mid); border-radius: 8px; padding: 4px 10px 6px; background: #fff; display: flex; flex-direction: column; justify-content: space-between; min-height: 62px; height: 100%; }
+  .sig-area { flex: 1; width: 100%; min-height: 38px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 2px 0; }
+  .sig-area img { width: 100%; height: 100%; max-height: 62px; object-fit: contain; display: block; mix-blend-mode: multiply; }
+  .sig-label { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-light); border-top: 1px solid var(--border); padding-top: 4px; text-align: center; }
 
   table.items tbody tr {
     height: 30px;
@@ -222,7 +222,7 @@ export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
       min-height: ${paperSize === 'a3' ? '390mm' : paperSize === 'legal' ? '467mm' : '388mm'} !important;
       height: auto !important;
       margin: 0 !important; 
-      padding: 24px 28px !important; 
+      padding: 12px 28px !important; 
       box-shadow: none !important; 
       border-radius: 0 !important;
       zoom: ${paperSize === 'a3' ? '1.05' : '0.74'} !important;
@@ -237,32 +237,29 @@ export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
   <div class="processed-stamp" aria-label="Returned"><span>RETURNED</span></div>
   <header class="header">
     <div class="company-block">
-      <div style="display:flex;gap:18px;align-items:center;margin-bottom:10px">
-        ${pd.settings.showLogo && logoSrc ? `<img src="${logoSrc}" style="height:56px;width:56px;object-fit:contain" />` : ''}
-        <h1>${pd.business.name}</h1>
-      </div>
-      <div class="company-meta">
-        <div class="meta-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>${pd.business.address}</span></div>
-        <div class="meta-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>DL No: ${pd.business.dlNo}</span></div>
-        <div class="meta-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>GSTIN: ${pd.business.gstin}</span></div>
-        <div class="meta-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.49 12 19.79 19.79 0 0 1 1.21 3.53 2 2 0 0 1 3.18 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.29 6.29l1.42-1.42a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>${pd.business.contact} &nbsp;|&nbsp; ${pd.business.email}</span></div>
+      <div style="display:flex;gap:18px;align-items:center;">
+        ${pd.settings.showLogo && logoSrc
+          ? `<img src="${logoSrc}" alt="${pd.business.name}" style="height:80px;width:auto;max-width:380px;object-fit:contain;display:block" />`
+          : `<h1>${pd.business.name}</h1>`}
       </div>
     </div>
     <div class="invoice-box">
-      <div class="label-sm">Return Bill Number</div><div class="invoice-num">${pd.returnInvoiceNumber}</div>
-      <div class="label-sm">Original Invoice</div><div class="invoice-num" style="font-size:13px; margin-bottom:10px">#${pd.originalInvoiceNumber}</div>
-      <div class="label-sm">Return Date</div><div class="bill-date">${pd.date}</div>
+      <div><div class="label-sm">Return Bill No</div><div class="invoice-num">${pd.returnInvoiceNumber}</div></div>
+      <div class="inv-col-sep"><div class="label-sm">Original Inv</div><div class="invoice-num" style="font-size:13px">#${pd.originalInvoiceNumber}</div></div>
+      <div class="inv-col-sep"><div class="label-sm">Return Date</div><div class="bill-date">${pd.date}</div></div>
     </div>
   </header>
-  <hr class="divider">
   <section class="bill-section">
+    <div class="company-meta">
+      <div style="font-size:9px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:2px;">Invoice By</div>
+      <div class="meta-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>${pd.business.address}</span></div>
+      <div class="meta-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>DL No: ${pd.business.dlNo}</span></div>
+      <div class="meta-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>GSTIN: ${pd.business.gstin}</span></div>
+      <div class="meta-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.49 12 19.79 19.79 0 0 1 1.21 3.53 2 2 0 0 1 3.18 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.29 6.29l1.42-1.42a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>${pd.business.contact} &nbsp;|&nbsp; ${pd.business.email}</span></div>
+    </div>
     <div class="bill-card">
       <div class="label-sm">Customer Info</div><div class="company-name">${pd.customer.name}</div>
       <div class="bill-addr">Phone: ${pd.customer.phone}</div>
-    </div>
-    <div class="amount-block">
-      <div class="amt-label">Net Settlement</div><div class="amt-value" style="font-size: 26px;">₹${grandTotal.toFixed(2)}</div>
-      <span class="net-badge">${pd.netText}</span>
     </div>
   </section>
 
@@ -294,22 +291,16 @@ export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
 
   <div class="bottom-section">
     <div>
-      <div class="section-title">Settlement Account</div>
-      <div class="payment-box">
-        <div class="payment-row"><span class="pk">Settled Via:</span><span class="pv">${pd.accountName}</span></div>
-        <div class="payment-row"><span class="pk">Refund Amt:</span><span class="pv">₹${pd.refundAmount}</span></div>
-        <div class="payment-row"><span class="pk">Collected:</span><span class="pv">₹${pd.extraCharged}</span></div>
-      </div>
-      <div class="payment-notes">* Damaged/expired medicines are quarantined immediately.<br>* Audited under pharma sales ledger entries.</div>
-    </div>
-    <div>
       <div class="section-title">Summary</div>
       <div class="tax-row"><span>Returned Value (+)</span><span>₹${pd.returnedAmount}</span></div>
       <div class="tax-row"><span>Replacement Value (-)</span><span>₹${pd.replacementAmount}</span></div>
       <div class="tax-row"><span>Net Dynamic Diff</span><span>₹${(pd.returnedAmount - pd.replacementAmount).toFixed(2)}</span></div>
     </div>
     <div class="grand-total-box">
-      <div class="gt-label">Settlement Amount</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+        <div class="gt-label" style="margin-bottom:0">Settlement Amount</div>
+        <span class="net-badge">${pd.netText}</span>
+      </div>
       <div class="gt-value">₹${grandTotal.toFixed(2)}</div>
       <div class="words-label">Amount in Words</div>
       <div class="words-text">${pd.settlementWords}</div>
@@ -317,9 +308,23 @@ export function buildReturnInvoiceHTML(pd, logoSrc, paperSize = 'a4') {
   </div>
 
   <div class="signature-section">
-    <div class="sig-block"><div style="height:36px"></div><div class="sig-line"></div><div class="sig-label">Customer's Signature</div></div>
-    <div class="sig-block center"><div style="height:36px"></div><div class="sig-for">for ${pd.business.name}</div></div>
-    <div class="sig-block" style="align-items:flex-end"><div style="height:36px"></div><div class="sig-line"></div><div class="sig-label">Authorized Signatory</div></div>
+    <div>
+      <div class="section-title">Settlement Account</div>
+      <div class="payment-box">
+        <div class="payment-row"><span class="pk">Settled Via:</span><span class="pv">${pd.accountName}</span></div>
+        <div class="payment-row"><span class="pk">Refund Amt:</span><span class="pv">₹${pd.refundAmount}</span></div>
+        <div class="payment-row"><span class="pk">Collected:</span><span class="pv">₹${pd.extraCharged}</span></div>
+      </div>
+      <div class="payment-notes">* T&amp;C Apply.</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-area"></div>
+      <div class="sig-label">Customer's Signature</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-area"><img src="${getSignatorySrc()}" alt="Authorized Signatory" /></div>
+      <div class="sig-label">Authorized Signatory</div>
+    </div>
   </div>
 </div>
 </body>

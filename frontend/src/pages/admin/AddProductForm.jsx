@@ -1,23 +1,59 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Save, Package, Tag, Hash, BarChart2, IndianRupee, Plus, Trash2, Calendar } from 'lucide-react';
+import { X, Save, Package, Tag, Hash, BarChart2, IndianRupee, Plus, Trash2, Calendar, RotateCcw } from 'lucide-react';
 import api from '../../services/api';
 import notify from '../../components/ui/notify';
 import { FARM_CATEGORIES, PHARMA_CATEGORIES } from '../../config/constants';
 import { useAuth } from '../../context/AuthContext';
+
+const PRODUCT_DRAFT_KEY = 'draft_product_form';
+const EMPTY_PRODUCT_FORM = {
+  name: '', category: '', manufacturer: '',
+  ptr: '', mrp: '', gst: '0', hsn: '', barcode: '',
+  quantity: '', description: '',
+};
 
 export default function AddProductForm({ product, onClose, onSaved }) {
   const { businessType } = useAuth();
   const isEdit = !!product;
   const isPharma = businessType === 'pharma';
 
-  const [form, setForm] = useState({
-    name: '', category: '', manufacturer: '',
-    price: '', gst: '0', hsn: '', barcode: '',
-    quantity: '', description: '',
+  const [form, setForm] = useState(() => {
+    if (product) return EMPTY_PRODUCT_FORM;
+    try {
+      const saved = JSON.parse(localStorage.getItem(PRODUCT_DRAFT_KEY) || 'null');
+      return saved?.form ? { ...EMPTY_PRODUCT_FORM, ...saved.form } : EMPTY_PRODUCT_FORM;
+    } catch {
+      return EMPTY_PRODUCT_FORM;
+    }
   });
-  const [batches, setBatches] = useState([]);
+  const [batches, setBatches] = useState(() => {
+    if (product) return [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(PRODUCT_DRAFT_KEY) || 'null');
+      if (Array.isArray(saved?.batches) && saved.batches.length > 0) return saved.batches;
+    } catch { /* ignore */ }
+    return isPharma ? [{ batchNumber: '', expiryDate: '', quantity: '' }] : [];
+  });
+  const [offers, setOffers] = useState(() => {
+    if (product) return [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(PRODUCT_DRAFT_KEY) || 'null');
+      if (Array.isArray(saved?.offers)) return saved.offers;
+    } catch { /* ignore */ }
+    return [];
+  });
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [suppliers, setSuppliers] = useState([]);
+
+  useEffect(() => {
+    api.get('/suppliers')
+      .then((r) => {
+        const d = r.data;
+        setSuppliers(Array.isArray(d) ? d : (d?.data || []));
+      })
+      .catch(() => setSuppliers([]));
+  }, []);
 
   useEffect(() => {
     if (product) {
@@ -25,7 +61,8 @@ export default function AddProductForm({ product, onClose, onSaved }) {
         name: product.name || '',
         category: product.category || '',
         manufacturer: product.manufacturer || '',
-        price: String(product.price ?? ''),
+        ptr: String(product.ptr ?? product.price ?? ''),
+        mrp: String(product.mrp ?? ''),
         gst: String(product.gst ?? '0'),
         hsn: product.hsn || '',
         barcode: product.barcode || '',
@@ -38,12 +75,27 @@ export default function AddProductForm({ product, onClose, onSaved }) {
           expiryDate: b.expiryDate ? b.expiryDate.split('T')[0] : ''
         })));
       }
-    } else {
-      if (isPharma) {
-        setBatches([{ batchNumber: '', expiryDate: '', quantity: '' }]);
-      }
+      setOffers(Array.isArray(product.offers) ? product.offers.map(o => ({
+        buyQty: String(o.buyQty ?? ''),
+        freeQty: String(o.freeQty ?? '')
+      })) : []);
     }
   }, [product, isPharma]);
+
+  useEffect(() => {
+    if (isEdit) return;
+    try {
+      localStorage.setItem(PRODUCT_DRAFT_KEY, JSON.stringify({ form, batches, offers }));
+    } catch { /* ignore */ }
+  }, [form, batches, offers, isEdit]);
+
+  const handleClearDraft = () => {
+    setForm(EMPTY_PRODUCT_FORM);
+    setBatches(isPharma ? [{ batchNumber: '', expiryDate: '', quantity: '' }] : []);
+    setOffers([]);
+    setErrors({});
+    try { localStorage.removeItem(PRODUCT_DRAFT_KEY); } catch { /* ignore */ }
+  };
 
   const updateField = useCallback((field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -58,10 +110,16 @@ export default function AddProductForm({ product, onClose, onSaved }) {
     setBatches(newBatches);
   };
 
+  const addOffer = () => setOffers([...offers, { buyQty: '', freeQty: '' }]);
+  const removeOffer = (idx) => setOffers(offers.filter((_, i) => i !== idx));
+  const updateOffer = (idx, field, value) => {
+    setOffers(offers.map((o, i) => (i === idx ? { ...o, [field]: value } : o)));
+  };
+
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = 'Product name is required';
-    if (!form.price || Number(form.price) <= 0) e.price = 'Valid price is required';
+    if (!form.ptr || Number(form.ptr) <= 0) e.ptr = 'Valid PTR is required';
     
     if (isPharma) {
       if (batches.length === 0) e.batches = 'At least one batch is required for Pharma';
@@ -81,16 +139,22 @@ export default function AddProductForm({ product, onClose, onSaved }) {
 
     setSubmitting(true);
     try {
+      const ptrVal = Number(form.ptr);
       const payload = {
         name: form.name.trim(),
         category: form.category,
         manufacturer: form.manufacturer.trim(),
-        price: Number(form.price),
+        price: ptrVal,
+        ptr: ptrVal,
+        mrp: Number(form.mrp) || 0,
         gst: Number(form.gst) || 0,
         hsn: form.hsn.trim(),
         barcode: form.barcode.trim(),
         quantity: isPharma ? batches.reduce((s, b) => s + (Number(b.quantity) || 0), 0) : (Number(form.quantity) || 0),
         description: form.description.trim(),
+        offers: offers
+          .filter(o => Number(o.buyQty) > 0 && Number(o.freeQty) > 0)
+          .map(o => ({ buyQty: Number(o.buyQty), freeQty: Number(o.freeQty) })),
       };
 
       if (isPharma) {
@@ -105,6 +169,7 @@ export default function AddProductForm({ product, onClose, onSaved }) {
         notify('Product updated successfully', 'success');
       } else {
         await api.post('/products', payload);
+        try { localStorage.removeItem(PRODUCT_DRAFT_KEY); } catch { /* ignore */ }
         notify('Product created successfully', 'success');
       }
       onSaved();
@@ -170,15 +235,33 @@ export default function AddProductForm({ product, onClose, onSaved }) {
                 </select>
               </div>
               <div>
-                <label className="pro-label">Manufacturer</label>
-                <input value={form.manufacturer} onChange={(e) => updateField('manufacturer', e.target.value)} className="pro-input" placeholder="Brand name" />
+                <label className="pro-label">Manufacturer / Vendor</label>
+                <select
+                  value={form.manufacturer}
+                  onChange={(e) => updateField('manufacturer', e.target.value)}
+                  className="pro-input bg-white"
+                >
+                  <option value="">Select Vendor</option>
+                  {form.manufacturer && !suppliers.some(s => (s.company || s.name) === form.manufacturer) && (
+                    <option value={form.manufacturer}>{form.manufacturer}</option>
+                  )}
+                  {suppliers.map((s) => {
+                    const val = s.company || s.name;
+                    return <option key={s._id} value={val}>{val}</option>;
+                  })}
+                </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="pro-label">Price (₹) *</label>
-                <input type="number" step="0.01" value={form.price} onChange={(e) => updateField('price', e.target.value)} className={`pro-input ${errors.price ? '!border-red-400' : ''}`} placeholder="0.00" />
+                <label className="pro-label">PTR (₹) *</label>
+                <input type="number" step="0.01" value={form.ptr} onChange={(e) => updateField('ptr', e.target.value)} className={`pro-input ${errors.ptr ? '!border-red-400' : ''}`} placeholder="0.00" />
+                {errors.ptr && <p className="text-xs text-red-500 mt-1">{errors.ptr}</p>}
+              </div>
+              <div>
+                <label className="pro-label">MRP (₹)</label>
+                <input type="number" step="0.01" value={form.mrp} onChange={(e) => updateField('mrp', e.target.value)} className="pro-input" placeholder="0.00" />
               </div>
               <div>
                 <label className="pro-label">GST (%)</label>
@@ -252,13 +335,69 @@ export default function AddProductForm({ product, onClose, onSaved }) {
                 <input value={form.barcode} onChange={(e) => updateField('barcode', e.target.value)} className="pro-input" placeholder="Scan..." />
               </div>
             </div>
+
+            {/* Promotions & Offers (Buy X Get Y Free) */}
+            <div className="space-y-2.5 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <label className="pro-label !mb-0 flex items-center gap-1.5">
+                  <Tag size={12} className="text-accent" />
+                  Offers (Buy X Get Y Free)
+                </label>
+                <button type="button" onClick={addOffer} className="text-[11px] font-bold text-accent flex items-center gap-1 hover:underline">
+                  <Plus size={12} /> Add Offer
+                </button>
+              </div>
+              {offers.length === 0 ? (
+                <p className="text-[11px] text-slate-400">No offers configured for this product.</p>
+              ) : (
+                <div className="space-y-2">
+                  {offers.map((o, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="flex-1">
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="Buy Qty"
+                          value={o.buyQty}
+                          onChange={(e) => updateOffer(idx, 'buyQty', e.target.value)}
+                          className="pro-input !py-1.5 !text-xs bg-white"
+                        />
+                      </div>
+                      <span className="text-[11px] font-bold text-slate-400">→</span>
+                      <div className="flex-1">
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="Free Qty"
+                          value={o.freeQty}
+                          onChange={(e) => updateOffer(idx, 'freeQty', e.target.value)}
+                          className="pro-input !py-1.5 !text-xs bg-white"
+                        />
+                      </div>
+                      <button type="button" onClick={() => removeOffer(idx)} className="text-red-400 hover:text-red-600 p-1">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/30">
-            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-            <button type="submit" disabled={submitting} className="btn-primary">
-              {submitting ? 'Saving…' : (isEdit ? 'Update Product' : 'Add Product')}
-            </button>
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/30">
+            <div>
+              {!isEdit && (
+                <button type="button" onClick={handleClearDraft} className="btn-secondary !text-xs">
+                  <RotateCcw size={14} /> Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3">
+              <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+              <button type="submit" disabled={submitting} className="btn-primary">
+                {submitting ? 'Saving…' : (isEdit ? 'Update Product' : 'Add Product')}
+              </button>
+            </div>
           </div>
         </form>
       </div>

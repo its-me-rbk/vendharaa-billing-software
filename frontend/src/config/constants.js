@@ -36,6 +36,6 @@ export const PHARMA_CATEGORIES = [
 
 export const PAYMENT_METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Cheque'];
 
-export const SESSION_TIMEOUT_DEFAULT = 30; // minutes
+export const SESSION_TIMEOUT_DEFAULT = 120; // minutes
 
 export const LOW_STOCK_THRESHOLD = 10;

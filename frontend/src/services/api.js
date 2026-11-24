@@ -9,7 +9,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     if (config.url.includes('/users/login')) return config;
-    const token = sessionStorage.getItem('token');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
@@ -41,7 +41,10 @@ api.interceptors.response.use(
         } catch (_) {
           console.error(alertText);
         } finally {
-          try { sessionStorage.clear(); } catch (_) {}
+          ['token', 'tokenExpiry', 'user', 'role', 'businessType'].forEach((k) => {
+            try { localStorage.removeItem(k); } catch (_) {}
+            try { sessionStorage.removeItem(k); } catch (_) {}
+          });
           window.location.reload();
         }
       };

@@ -5,21 +5,29 @@ import { broadcastAndClear, clearTransientLocalStorage } from '../utils/storageC
 
 const AuthContext = createContext(null);
 
+const AUTH_KEYS = ['token', 'tokenExpiry', 'user', 'role', 'businessType'];
+const clearAuthStorage = () => {
+  AUTH_KEYS.forEach((k) => {
+    try { localStorage.removeItem(k); } catch (_) {}
+    try { sessionStorage.removeItem(k); } catch (_) {}
+  });
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    try { const raw = sessionStorage.getItem('user'); return raw ? JSON.parse(raw) : null; } catch { return null; }
+    try { const raw = localStorage.getItem('user') || sessionStorage.getItem('user'); return raw ? JSON.parse(raw) : null; } catch { return null; }
   });
   const [role, setRole] = useState(() => {
-    const r = sessionStorage.getItem('role') || '';
+    const r = localStorage.getItem('role') || sessionStorage.getItem('role') || '';
     if (r.toLowerCase() === 'superadmin') return 'SuperAdmin';
     if (r.toLowerCase() === 'admin') return 'Admin';
     if (r.toLowerCase() === 'cashier') return 'Cashier';
     return r;
   });
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!sessionStorage.getItem('token'));
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!(localStorage.getItem('token') || sessionStorage.getItem('token')));
   const [sessionTimeoutEnabled, setSessionTimeoutEnabled] = useState(true);
   const [sessionTimeoutMinutes, setSessionTimeoutMinutes] = useState(30);
-  const [businessType, setBusinessType] = useState(() => sessionStorage.getItem('businessType') || 'agro');
+  const [businessType, setBusinessType] = useState(() => localStorage.getItem('businessType') || sessionStorage.getItem('businessType') || 'agro');
   const timeoutRef = useRef(null);
 
   const login = useCallback(async (email, password, force = false) => {
@@ -31,11 +39,11 @@ export function AuthProvider({ children }) {
     const minutes = timeoutMinutes || 30;
     const expiry = new Date(Date.now() + minutes * 60 * 1000);
 
-    sessionStorage.setItem('token', token);
-    sessionStorage.setItem('tokenExpiry', expiry.toISOString());
-    sessionStorage.setItem('user', JSON.stringify(userData));
-    sessionStorage.setItem('role', roleLower);
-    sessionStorage.setItem('businessType', userData.businessType || 'agro');
+    localStorage.setItem('token', token);
+    localStorage.setItem('tokenExpiry', expiry.toISOString());
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('role', roleLower);
+    localStorage.setItem('businessType', userData.businessType || 'agro');
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
     setUser(userData);
@@ -58,7 +66,8 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try { await authService.logout(); } catch (_) {}
-    sessionStorage.clear();
+    clearAuthStorage();
+    try { broadcastAndClear('app_logout_handled', { reason: 'manual', ts: Date.now() }); } catch (_) {}
     try { clearTransientLocalStorage(); } catch (_) {}
     setUser(null);
     setRole('');
@@ -68,7 +77,7 @@ export function AuthProvider({ children }) {
 
   const forceLogout = useCallback((reason = 'expired') => {
     try { broadcastAndClear('app_logout_handled', { reason, ts: Date.now() }); } catch (_) {}
-    sessionStorage.clear();
+    clearAuthStorage();
     setUser(null);
     setRole('');
     setIsAuthenticated(false);
@@ -77,8 +86,8 @@ export function AuthProvider({ children }) {
 
   // Token expiry check on mount + auto-logout timer
   useEffect(() => {
-    const token = sessionStorage.getItem('token');
-    const expiry = sessionStorage.getItem('tokenExpiry');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const expiry = localStorage.getItem('tokenExpiry') || sessionStorage.getItem('tokenExpiry');
     if (token && expiry) {
       const expiryTime = new Date(expiry).getTime();
       const now = Date.now();
@@ -98,7 +107,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'app_logout_handled' && e.newValue) {
-        try { sessionStorage.clear(); } catch (_) {}
+        clearAuthStorage();
         setUser(null); setRole(''); setIsAuthenticated(false);
         window.location.reload();
       }

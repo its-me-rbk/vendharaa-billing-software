@@ -21,6 +21,8 @@ const productSchema = new mongoose.Schema(
     manufacturer: { type: String },
     quantity: { type: Number, default: 0 },
     price: { type: Number, default: 0 },
+    ptr: { type: Number, default: 0 },
+    mrp: { type: Number, default: 0 },
     gst: { type: Number, default: 0 },
     hsn: { type: String, default: "" },
     barcode: { type: String, default: "" },

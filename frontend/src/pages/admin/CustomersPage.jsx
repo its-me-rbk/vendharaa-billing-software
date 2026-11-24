@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Users, Plus, Search, Edit, Trash2, Phone, Mail, Star, X, Save } from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Phone, Mail, Star, X, Save, RotateCcw } from 'lucide-react';
 import api from '../../services/api';
 import notify from '../../components/ui/notify';
 import PageHeader from '../../components/common/PageHeader';
@@ -7,15 +7,37 @@ import StatCard from '../../components/common/StatCard';
 import EmptyState from '../../components/common/EmptyState';
 import ConfirmModal from '../../components/common/ConfirmModal';
 
+const CUSTOMER_DRAFT_KEY = 'draft_customer_form';
+const EMPTY_CUSTOMER_FORM = { name: '', phone: '', email: '', address: '' };
+
 function CustomerFormModal({ customer, onClose, onSaved }) {
   const isEdit = !!customer;
-  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '' });
+  const [form, setForm] = useState(() => {
+    if (customer) return EMPTY_CUSTOMER_FORM;
+    try {
+      const saved = JSON.parse(localStorage.getItem(CUSTOMER_DRAFT_KEY) || 'null');
+      return saved ? { ...EMPTY_CUSTOMER_FORM, ...saved } : EMPTY_CUSTOMER_FORM;
+    } catch {
+      return EMPTY_CUSTOMER_FORM;
+    }
+  });
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (customer) setForm({ name: customer.name||'', phone: customer.phone||'', email: customer.email||'', address: customer.address||'' });
   }, [customer]);
+
+  useEffect(() => {
+    if (isEdit) return;
+    try { localStorage.setItem(CUSTOMER_DRAFT_KEY, JSON.stringify(form)); } catch { /* ignore */ }
+  }, [form, isEdit]);
+
+  const handleClear = () => {
+    setForm(EMPTY_CUSTOMER_FORM);
+    setErrors({});
+    try { localStorage.removeItem(CUSTOMER_DRAFT_KEY); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     const h = (e) => { if (e.key === 'Escape') onClose(); };
@@ -38,7 +60,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
     try {
       const p = { name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(), address: form.address.trim() };
       if (isEdit) { await api.put(`/customers/${customer._id}`, p); notify('Customer updated', 'success'); }
-      else { await api.post('/customers', p); notify('Customer added', 'success'); }
+      else { await api.post('/customers', p); try { localStorage.removeItem(CUSTOMER_DRAFT_KEY); } catch { /* ignore */ } notify('Customer added', 'success'); }
       onSaved();
     } catch (err) { notify(err.response?.data?.message || 'Failed to save', 'error'); }
     finally { setSubmitting(false); }
@@ -65,9 +87,18 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
             </div>
             <div><label className="pro-label">Address</label><textarea value={form.address} onChange={e => set('address', e.target.value)} className="pro-input resize-none" rows={2} placeholder="Full address" /></div>
           </div>
-          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/30">
-            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-            <button type="submit" disabled={submitting} className="btn-primary"><Save size={15} /> {submitting ? 'Saving…' : isEdit ? 'Update' : 'Add Customer'}</button>
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/30">
+            <div>
+              {!isEdit && (
+                <button type="button" onClick={handleClear} className="btn-secondary !text-xs">
+                  <RotateCcw size={14} /> Clear
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3">
+              <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+              <button type="submit" disabled={submitting} className="btn-primary"><Save size={15} /> {submitting ? 'Saving…' : isEdit ? 'Update' : 'Add Customer'}</button>
+            </div>
           </div>
         </form>
       </div>

@@ -129,7 +129,8 @@ export default function ProductsPage() {
                   <tr>
                     <th>Product</th>
                     <th>Category</th>
-                    <th className="text-right">Price</th>
+                    <th className="text-right">PTR</th>
+                    <th className="text-right">MRP</th>
                     <th className="text-center">Total Stock</th>
                     {isPharma && <th>Batches</th>}
                     <th className="text-center">Actions</th>
@@ -143,6 +144,15 @@ export default function ProductsPage() {
                           <div className="flex flex-col">
                             <span className="font-bold text-slate-800">{p.name}</span>
                             <span className="text-[10px] text-slate-400">{p.manufacturer || 'No Manufacturer'}</span>
+                            {p.offers?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {p.offers.map((o, i) => (
+                                  <span key={i} className="badge badge-green !text-[9px]">
+                                    Buy {o.buyQty} Get {o.freeQty} Free
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td>
@@ -157,7 +167,8 @@ export default function ProductsPage() {
                             </span>
                           )}
                         </td>
-                        <td className="text-right font-bold">₹{(p.price || 0).toLocaleString()}</td>
+                        <td className="text-right font-bold">₹{(p.ptr ?? p.price ?? 0).toLocaleString()}</td>
+                        <td className="text-right font-medium text-slate-500">₹{(p.mrp || 0).toLocaleString()}</td>
                         <td className="text-center">
                           <span className={`font-bold text-sm ${(p.quantity || 0) <= 0 ? 'text-red-600' : (p.quantity || 0) < 10 ? 'text-orange-600' : 'text-emerald-600'}`}>
                             {p.quantity || 0}

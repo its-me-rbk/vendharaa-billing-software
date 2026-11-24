@@ -2,22 +2,32 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../../../services/api';
 import logo from '../../../assets/logo.png';
 
+const BILL_DRAFT_KEY = 'draft_invoice_bill';
+const readBillDraft = () => {
+  try {
+    return JSON.parse(localStorage.getItem(BILL_DRAFT_KEY) || 'null') || {};
+  } catch {
+    return {};
+  }
+};
+
 export default function useBillingState() {
+  const initialDraft = readBillDraft();
   const [generalSettings, setGeneralSettings] = useState(null);
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [bills, setBills] = useState([]);
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => Array.isArray(initialDraft.items) ? initialDraft.items : []);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productSearch, setProductSearch] = useState('');
   const [qty, setQty] = useState('');
-  const [customer, setCustomer] = useState({ name: '', phone: '', address: '', email: '' });
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
-  const [discount, setDiscount] = useState(0);
-  const [payment, setPayment] = useState('Cash');
-  const [paymentType, setPaymentType] = useState('full');
-  const [amountPaid, setAmountPaid] = useState(0);
+  const [customer, setCustomer] = useState(() => initialDraft.customer || { name: '', phone: '', address: '', email: '' });
+  const [customerSearch, setCustomerSearch] = useState(() => initialDraft.customerSearch || '');
+  const [selectedCustomerId, setSelectedCustomerId] = useState(() => initialDraft.selectedCustomerId || null);
+  const [discount, setDiscount] = useState(() => Number(initialDraft.discount) || 0);
+  const [payment, setPayment] = useState(() => initialDraft.payment || 'Cash');
+  const [paymentType, setPaymentType] = useState(() => initialDraft.paymentType || 'full');
+  const [amountPaid, setAmountPaid] = useState(() => initialDraft.amountPaid ?? 0);
   const [billSearch, setBillSearch] = useState('');
   const [billStatusFilter, setBillStatusFilter] = useState('All');
   const [selectedBill, setSelectedBill] = useState(null);
@@ -68,6 +78,27 @@ export default function useBillingState() {
 
   const clearCustomer = useCallback(() => { setSelectedCustomerId(null); setCustomerSearch(''); setPendingInfo(null); setCustomer({ name:'', phone:'', address:'', email:'' }); }, []);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(BILL_DRAFT_KEY, JSON.stringify({
+        items, customer, selectedCustomerId, customerSearch, discount, payment, paymentType, amountPaid
+      }));
+    } catch { /* ignore */ }
+  }, [items, customer, selectedCustomerId, customerSearch, discount, payment, paymentType, amountPaid]);
+
+  const clearBillingDraft = useCallback(() => {
+    setItems([]);
+    clearCustomer();
+    setDiscount(0);
+    setPayment('Cash');
+    setPaymentType('full');
+    setAmountPaid(0);
+    setSelectedProduct(null);
+    setProductSearch('');
+    setSelectedBatch(null);
+    try { localStorage.removeItem(BILL_DRAFT_KEY); } catch { /* ignore */ }
+  }, [clearCustomer]);
+
   const calculateFreeQty = (product, q) => {
     if (!product?.offers?.length) return 0;
     let rem = Number(q), free = 0;
@@ -76,8 +107,8 @@ export default function useBillingState() {
     return free;
   };
 
-  const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const gst = items.reduce((s, i) => s + i.cgst + i.sgst, 0);
+  const subtotal = items.reduce((s, i) => s + (Number(i.ptr ?? i.price) || 0) * (Number(i.qty) || 0), 0);
+  const gst = items.reduce((s, i) => s + (Number(i.cgst) || 0) + (Number(i.sgst) || 0), 0);
   const total = subtotal - (subtotal * discount) / 100 + gst;
 
   return {
@@ -91,7 +122,7 @@ export default function useBillingState() {
     pendingInfo, setPendingInfo, logoSrc,
     selectedBatch, setSelectedBatch,
     filteredProducts, filteredCustomers,
-    selectCustomer, clearCustomer, calculateFreeQty,
+    selectCustomer, clearCustomer, clearBillingDraft, calculateFreeQty,
     subtotal, gst, total,
     fetchProducts, fetchBills, fetchCustomers, fetchSettings,
   };

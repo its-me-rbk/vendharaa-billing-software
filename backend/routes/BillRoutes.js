@@ -258,7 +258,7 @@ router.get("/:id", async (req, res) => {
 
 // DELETE BILL + RESTORE STOCK
 router.delete("/:id", async (req, res, next) => {
-  const { Bill, Product, Ledger } = req.models;
+  const { Bill, Product, Ledger, ReturnBill } = req.models;
   const businessType = req.user.businessType;
 
   try {
@@ -293,6 +293,22 @@ router.delete("/:id", async (req, res, next) => {
       await Ledger.deleteMany({ referenceId: bill._id, referenceType: "Bill" });
     } catch (ledgerErr) {
       console.error("Failed to automatically clean up ledger entries on bill delete:", ledgerErr);
+    }
+
+    // Delete associated return invoices and their ledger entries
+    try {
+      if (ReturnBill) {
+        const associatedReturns = await ReturnBill.find({
+          $or: [{ originalBillId: bill._id }, { originalInvoiceNumber: bill.invoice }]
+        }).select("_id");
+        const returnIds = associatedReturns.map((r) => r._id);
+        if (returnIds.length > 0) {
+          await Ledger.deleteMany({ referenceId: { $in: returnIds }, referenceType: "ReturnBill" });
+          await ReturnBill.deleteMany({ _id: { $in: returnIds } });
+        }
+      }
+    } catch (retErr) {
+      console.error("Failed to delete associated return bills on bill delete:", retErr);
     }
 
     try {

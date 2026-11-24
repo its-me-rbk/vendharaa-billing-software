@@ -18,12 +18,12 @@ const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'));
 const ProductsPage = lazy(() => import('./pages/admin/ProductsPage'));
 const BillingPage = lazy(() => import('./pages/admin/BillingPage'));
+const InvoicesPage = lazy(() => import('./pages/admin/InvoicesPage'));
 const PaymentsDuePage = lazy(() => import('./pages/admin/PaymentsDuePage'));
 const SuppliersPage = lazy(() => import('./pages/admin/SuppliersPage'));
 const CustomersPage = lazy(() => import('./pages/admin/CustomersPage'));
 const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'));
 const SessionsPage = lazy(() => import('./pages/admin/SessionsPage'));
-const OffersPage = lazy(() => import('./pages/admin/OffersPage'));
 const LedgerPage = lazy(() => import('./pages/admin/LedgerPage'));
 const UserProfilePage = lazy(() => import('./pages/admin/settings/UserProfilePage'));
 const ReturnBillsPage = lazy(() => import('./pages/admin/ReturnBillsPage'));
@@ -76,12 +76,12 @@ function AppRoutes() {
           <Route index element={<DashboardPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="billing" element={<BillingPage />} />
+          <Route path="invoices" element={<InvoicesPage />} />
           <Route path="payments" element={<PaymentsDuePage />} />
           <Route path="suppliers" element={<SuppliersPage />} />
           <Route path="customers" element={<CustomersPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="sessions" element={<SessionsPage />} />
-          <Route path="offers" element={<OffersPage />} />
           <Route path="ledger" element={<LedgerPage />} />
           <Route path="profile" element={<UserProfilePage />} />
           <Route path="returns" element={<ReturnBillsPage />} />
@@ -98,6 +98,7 @@ function AppRoutes() {
         >
           <Route index element={<CashierDashboardPage />} />
           <Route path="billing" element={<CashierBillingPage />} />
+          <Route path="invoices" element={<InvoicesPage />} />
           <Route path="payments" element={<CashierPaymentsDuePage />} />
           <Route path="profile" element={<UserProfilePage />} />
         </Route>

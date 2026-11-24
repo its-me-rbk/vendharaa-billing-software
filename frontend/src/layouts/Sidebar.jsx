@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutGrid, Package, ShoppingCart, DollarSign, Users, Truck, BarChart3,
-  Tag, Settings, LogOut, Clock, X, User, BookOpen, RotateCcw
+  Tag, Settings, LogOut, Clock, X, User, BookOpen, RotateCcw, FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
@@ -13,12 +13,12 @@ import redLogo from '../assets/red_logo.png';
 const adminNavItems = [
   { section: 'Main' },
   { title: 'Dashboard', icon: LayoutGrid, to: '/admin' },
-  { title: 'Billing', icon: ShoppingCart, to: '/admin/billing' },
+  { title: 'Create Bill', icon: ShoppingCart, to: '/admin/billing' },
+  { title: 'Invoices', icon: FileText, to: '/admin/invoices' },
   { section: 'Management' },
   { title: 'Products', icon: Package, to: '/admin/products' },
   { title: 'Customers', icon: Users, to: '/admin/customers' },
   { title: 'Suppliers', icon: Truck, to: '/admin/suppliers' },
-  { title: 'Offers', icon: Tag, to: '/admin/offers' },
   { section: 'Finance' },
   { title: 'Payments Due', icon: DollarSign, to: '/admin/payments' },
   { title: 'Reports', icon: BarChart3, to: '/admin/reports' },
@@ -31,7 +31,8 @@ const adminNavItems = [
 const cashierNavItems = [
   { section: 'Navigation' },
   { title: 'Dashboard', icon: LayoutGrid, to: '/cashier' },
-  { title: 'Billing', icon: ShoppingCart, to: '/cashier/billing' },
+  { title: 'Create Bill', icon: ShoppingCart, to: '/cashier/billing' },
+  { title: 'Invoices', icon: FileText, to: '/cashier/invoices' },
   { title: 'Payments Due', icon: DollarSign, to: '/cashier/payments' },
   { section: 'System' },
   { title: 'User Profile', icon: User, to: '/cashier/profile' },
