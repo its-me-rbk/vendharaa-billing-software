@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Download, FileText, TrendingUp, DollarSign, Package, AlertTriangle, BarChart3 } from 'lucide-react';
+import { Download, FileText, TrendingUp, DollarSign, Package, AlertTriangle, BarChart3, Truck } from 'lucide-react';
 import { MdOutlinePlaylistAddCheck } from 'react-icons/md';
 import { BarChart as ReBarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import api from '../../services/api';
 import PageHeader from '../../components/common/PageHeader';
 import StatCard from '../../components/common/StatCard';
 import { formatDate } from '../../lib/utils';
+import SupplierReportModal from './reports/SupplierReportModal';
 
 const pieColors = ['#14b8a6', '#0d9488', '#0f766e', '#115e59', '#0d9488', '#0e7490'];
 
@@ -15,6 +16,7 @@ export default function ReportsPage() {
   const [expiringProducts, setExpiringProducts] = useState([]);
   const [salesTrend, setSalesTrend] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
+  const [showSupplierReport, setShowSupplierReport] = useState(false);
 
   useEffect(() => {
     api.get('/reports/summary').then(r => setSummary(r.data)).catch(console.error);
@@ -29,6 +31,9 @@ export default function ReportsPage() {
       <PageHeader title="Reports & Analytics" subtitle="Generate insights and export reports"
         breadcrumbs={[{ label: 'Home', href: '/admin' }, { label: 'Reports' }]}
       >
+        <button className="btn-secondary" onClick={() => setShowSupplierReport(true)}>
+          <Truck className="w-4 h-4" /> Supplier Monthly Report
+        </button>
         <button className="btn-secondary"><Download className="w-4 h-4" /> Export PDF</button>
         <button className="btn-primary"><FileText className="w-4 h-4" /> Generate Report</button>
       </PageHeader>
@@ -154,6 +159,8 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
+
+      <SupplierReportModal open={showSupplierReport} onClose={() => setShowSupplierReport(false)} />
     </div>
   );
 }

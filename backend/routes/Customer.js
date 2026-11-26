@@ -24,31 +24,30 @@ router.post("/", async (req, res, next) => {
       notes,
     } = req.body;
 
-    if (!name || !phone) {
+    const trimmedName = (name || "").trim();
+    const trimmedPhone = (phone || "").trim();
+
+    if (!trimmedName) {
       return res.status(400).json({
         success: false,
-        message: "Name and Phone number are required",
+        message: "Name is required",
       });
     }
 
-    // Check if customer already exists
-    const existingCustomer = await Customer.findOne({ phone });
-    if (existingCustomer) {
-      return res.status(409).json({
-        success: false,
-        message: "Customer with this phone number already exists",
-      });
-    }
-
-    const customer = await Customer.create({
-      name,
-      phone,
+    const customerData = {
+      name: trimmedName,
       email,
       loyaltyPoints,
       address,
       notes,
       businessType
-    });
+    };
+    if (trimmedPhone) customerData.phone = trimmedPhone;
+
+    // Ensure any legacy unique index on phone is dropped so multiple customers can share a number
+    try { await Customer.collection.dropIndex("phone_1"); } catch (_) {}
+
+    const customer = await Customer.create(customerData);
 
     // Backfill historical bills that were created before this customer existed (match by phone only)
     try {

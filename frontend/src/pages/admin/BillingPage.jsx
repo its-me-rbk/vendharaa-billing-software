@@ -175,7 +175,7 @@ export default function BillingPage() {
     try {
       const name = (state.customer.name || "").trim();
       const phone = String(state.customer.phone || "").trim();
-      if (!name || !phone) return notify("Enter name and phone", 'error');
+      if (!name) return notify("Enter customer name", 'error');
 
       state.setSavingCustomer(true);
       const res = await api.post("/customers", { ...state.customer, name, phone });
@@ -414,7 +414,7 @@ export default function BillingPage() {
                   <input type="text" placeholder="Phone Number" className="pro-input !text-xs !bg-white" value={state.customer.phone} onChange={e => state.setCustomer({...state.customer, phone: e.target.value})} />
                   <button 
                     onClick={handleSaveNewCustomer} 
-                    disabled={state.savingCustomer || !state.customer.name || !state.customer.phone}
+                    disabled={state.savingCustomer || !state.customer.name}
                     className="btn-secondary !justify-center !text-[11px] !py-2.5 !px-4 bg-white shadow-sm whitespace-nowrap"
                   >
                     {state.savingCustomer ? 'Registering...' : 'Quick Register'}

@@ -51,7 +51,6 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
     ev.preventDefault();
     const e = {};
     if (!form.name.trim()) e.name = 'Name is required';
-    if (!form.phone.trim()) e.phone = 'Phone is required';
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Invalid email';
     setErrors(e);
     if (Object.keys(e).length) return;
@@ -82,7 +81,7 @@ function CustomerFormModal({ customer, onClose, onSaved }) {
           <div className="p-6 space-y-4">
             <div><label className="pro-label">Full Name *</label><input value={form.name} onChange={e => set('name', e.target.value)} className={fc('name')} placeholder="Customer name" autoFocus />{errors.name && <p className="text-xs text-red-500 mt-1 font-medium">{errors.name}</p>}</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label className="pro-label">Phone *</label><input value={form.phone} onChange={e => set('phone', e.target.value)} className={fc('phone')} placeholder="Phone number" type="tel" />{errors.phone && <p className="text-xs text-red-500 mt-1 font-medium">{errors.phone}</p>}</div>
+              <div><label className="pro-label">Phone</label><input value={form.phone} onChange={e => set('phone', e.target.value)} className={fc('phone')} placeholder="Phone number" type="tel" /></div>
               <div><label className="pro-label">Email</label><input value={form.email} onChange={e => set('email', e.target.value)} className={fc('email')} placeholder="email@example.com" />{errors.email && <p className="text-xs text-red-500 mt-1 font-medium">{errors.email}</p>}</div>
             </div>
             <div><label className="pro-label">Address</label><textarea value={form.address} onChange={e => set('address', e.target.value)} className="pro-input resize-none" rows={2} placeholder="Full address" /></div>

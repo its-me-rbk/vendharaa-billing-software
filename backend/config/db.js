@@ -52,6 +52,7 @@ const getModels = (connection) => {
   const { LedgerSchema } = require("../models/Ledger");
   const { AccountSchema } = require("../models/Account");
   const { ReturnBillSchema } = require("../models/ReturnBill");
+  const { StockTransactionSchema } = require("../models/StockTransaction");
 
   return {
     Product: connection.model("Product", productSchema),
@@ -63,6 +64,7 @@ const getModels = (connection) => {
     Ledger: connection.model("Ledger", LedgerSchema),
     Account: connection.model("Account", AccountSchema),
     ReturnBill: connection.model("ReturnBill", ReturnBillSchema),
+    StockTransaction: connection.model("StockTransaction", StockTransactionSchema),
   };
 };
 

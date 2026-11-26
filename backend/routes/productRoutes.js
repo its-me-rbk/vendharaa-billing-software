@@ -48,6 +48,21 @@ router.post("/", async (req, res, next) => {
     }
 
     const product = await Product.create(productData);
+    try {
+      const { StockTransaction } = req.models;
+      if (StockTransaction && Number(product.quantity) > 0) {
+        await StockTransaction.create({
+          productId: product._id,
+          productName: product.name,
+          manufacturer: product.manufacturer || "",
+          type: "initial",
+          quantity: Number(product.quantity),
+          businessType: req.user.businessType,
+        });
+      }
+    } catch (stErr) {
+      console.error("Failed to record initial StockTransaction:", stErr);
+    }
     res.json({ success: true, data: product });
   } catch (err) {
     next(err);
@@ -91,10 +106,31 @@ router.get("/top-performing", async (req, res) => {
  */
 router.put("/:id", async (req, res, next) => {
   try {
-    const { Product } = req.models;
+    const { Product, StockTransaction } = req.models;
+    const prevProduct = await Product.findById(req.params.id);
+    if (!prevProduct) return res.status(404).json({ success: false, message: "Product not found" });
+
+    const prevQty = Number(prevProduct.quantity) || 0;
     const updates = req.body;
     const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
-    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    try {
+      const newQty = Number(product.quantity) || 0;
+      const delta = newQty - prevQty;
+      if (StockTransaction && delta > 0) {
+        await StockTransaction.create({
+          productId: product._id,
+          productName: product.name,
+          manufacturer: product.manufacturer || "",
+          type: "purchase",
+          quantity: delta,
+          businessType: req.user.businessType,
+        });
+      }
+    } catch (stErr) {
+      console.error("Failed to record purchase StockTransaction:", stErr);
+    }
+
     res.json({ success: true, data: product });
   } catch (err) {
     next(err);
